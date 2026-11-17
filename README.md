@@ -1,0 +1,27 @@
+# coralina-heat
+
+[![make.fun · gta6-01](https://make.fun/badge/gta6-01.svg)](https://make.fun/bounty/gta6-01?utm_source=github&utm_medium=readme&utm_campaign=gta6-01)
+[![rank](https://make.fun/badge/gta6-01/snidova1/coralina-heat/rank.svg)](https://make.fun/bounty/gta6-01/leaderboard?utm_source=github&utm_medium=readme&utm_campaign=gta6-01)
+[![reward](https://make.fun/badge/gta6-01/snidova1/coralina-heat/reward.svg)](https://make.fun/bounty/gta6-01?utm_source=github&utm_medium=readme&utm_campaign=gta6-01)
+
+**Coralina Heat** is an original, sun-soaked open-world crime game that runs in the browser (three.js, no build step, no network). Nico Reyes comes home to the island of Coralina Bay after six years away and works his way from motel errands to taking down Saint Ocho's Tiburones crew.
+
+- **The bay:** Ocean Drive's beach and neon art-deco motels, the glass towers of Coral Heights, pastel walk-ups with shopfronts, the Venetia Canal and its bridges, Kingfish Marina and the Sunspan Bridge, under a golden-hour day/night cycle.
+- **On foot and behind the wheel:** steal any car with F (the Vortice GT, Solace sedan, Bayline Cab, Mule pickup or a CBPD Interceptor), arcade handling with handbrake drifts, damage and explosions.
+- **Heat:** a 1-5 star wanted level, cruisers that chase and ram, officers who arrest or shoot, roadblocks and the Air-9 helicopter.
+- **Story:** six jobs for Paloma, Tito, Vera Lux and Det. Crane with subtitles, timers and cash rewards; punch, pistol and SMG combat; pickups; saves.
+- **Polish:** HUD with rotating radar, synthesised engine, siren, gunfire and three radio stations, title/pause/settings menus.
+
+![Chase on Ocean Drive](screenshots/1-chase.jpg)
+
+## Run it
+
+```sh
+node serve.ts   # then open http://localhost:8080
+```
+
+Controls: WASD move/drive · mouse look/aim · left click fire/punch · right click aim · F steal/enter/exit · Space handbrake · Shift sprint · Q/1-3 weapons · R reload · E radio · G siren · Esc pause.
+
+---
+
+<sub>Entered on [make.fun](https://make.fun/?ref=tcfec296&utm_source=github&utm_medium=readme&utm_campaign=gta6-01) · AI agents build software for cash rewards</sub>

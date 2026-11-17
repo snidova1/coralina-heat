@@ -1,134 +1,275 @@
-// Boot and the one loop: input is read every frame, the world advances in fixed 1/60 s steps
-// (several in a slow frame, none in a fast one), and the renderer paints what is there. The game
-// moves between four screens: title, play, paused and game over.
-//
-// ?seed=N fixes the falling pattern. ?shot=start|play|end (with &seed=N) stages that scene
-// instead of running the loop, paints it twice and sets window.__shotReady for a screenshot.
-import { BEST_KEY, LIVES, STEP } from './config.js';
-import { createRandom } from './random.js';
-import { createWorld, EVENT_HIT, EVENT_OVER } from './world.js';
-import { ACTION_CONFIRM, ACTION_PAUSE, createInput } from './input.js';
-import { createRenderer, SCREEN_OVER, SCREEN_PAUSED, SCREEN_PLAY, SCREEN_TITLE } from './render.js';
-import { stageShot } from './shots.js';
+// Coralina Heat: boots the renderer and every system, wires the game events (deaths, arrests,
+// cash, districts), runs the main loop for the title screen, play and pause, and hands the
+// ?shot= screenshot scenes to shots.js.
+import * as THREE from 'three';
+import { seedRandom, rand } from './rng.js';
+import { Input } from './input.js';
+import { Roads } from './roads.js';
+import { City } from './city.js';
+import { DayCycle } from './daycycle.js';
+import { Effects } from './effects.js';
+import { Vehicles } from './vehicles.js';
+import { Player } from './player.js';
+import { CameraRig } from './camera.js';
+import { Traffic } from './traffic.js';
+import { Pedestrians } from './pedestrians.js';
+import { Wanted } from './wanted.js';
+import { Police } from './police.js';
+import { Combat } from './combat.js';
+import { Missions } from './missions.js';
+import { Pickups } from './pickups.js';
+import { Hud } from './hud.js';
+import { Minimap } from './minimap.js';
+import { AudioEngine } from './audio.js';
+import { SaveSystem } from './save.js';
+import { Menu } from './menu.js';
+import { runShot } from './shots.js';
+import { districtAt, PLACES } from './map.js';
 
-/** The longest frame the loop catches up on; a longer stall (a hidden tab) is dropped, not replayed. */
-const MAX_FRAME = 0.25;
-
-const params = new URLSearchParams(window.location.search);
-const shot = params.get('shot');
-const seedParam = Number.parseInt(params.get('seed') ?? '', 10);
-const seed = Number.isInteger(seedParam) ? seedParam : Math.floor(Math.random() * 4294967296);
+const params = new URLSearchParams(location.search);
+const shotName = params.get('shot');
+seedRandom(Number(params.get('seed') || 1));
 
 const canvas = document.getElementById('game');
-const status = document.getElementById('status');
-const world = createWorld(createRandom(seed));
-const renderer = createRenderer(canvas);
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(shotName ? 1 : Math.min(window.devicePixelRatio, 1.5));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
 
-function readBest() {
-  try {
-    return Number.parseInt(window.localStorage.getItem(BEST_KEY) ?? '0', 10) || 0;
-  } catch {
-    return 0;
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(62, window.innerWidth / window.innerHeight, 0.3, 4200);
+
+const game = {
+  THREE, scene, camera, renderer, time: 0, mode: 'loading', godMode: false,
+  stats: { cash: 0, missionsDone: 0, kills: 0, distance: 0, carsStolen: 0, busted: 0, wasted: 0 },
+};
+window.coralina = game;
+
+game.save = new SaveSystem(game);
+game.settings = game.save.loadSettings();
+game.roads = new Roads(scene);
+game.city = new City(scene);
+game.day = new DayCycle(game);
+game.effects = new Effects(game);
+game.vehicles = new Vehicles(game);
+game.player = new Player(game);
+game.cameraRig = new CameraRig(game);
+game.traffic = new Traffic(game);
+game.pedestrians = new Pedestrians(game);
+game.wanted = new Wanted(game);
+game.police = new Police(game);
+game.combat = new Combat(game);
+game.missions = new Missions(game);
+game.pickups = new Pickups(game);
+game.hud = new Hud(game, document.getElementById('hud'));
+game.minimap = new Minimap(game, game.hud.radarCanvas);
+game.audio = new AudioEngine(game);
+game.menu = new Menu(game, document.getElementById('menu'));
+game.input = shotName ? null : new Input(canvas);
+const grade = document.createElement('div');
+grade.className = 'grade';
+document.body.appendChild(grade);
+
+game.allActors = function* allActors() {
+  yield* game.pedestrians.list;
+  yield* game.police.officers;
+  yield* game.missions.enemies;
+};
+
+game.addCash = (n) => {
+  game.stats.cash = Math.max(0, game.stats.cash + n);
+  if (n > 0 && game.audio) game.audio.jingle('cash');
+};
+
+game.onActorKilled = (actor, source) => {
+  if (source !== 'player') return;
+  game.stats.kills += 1;
+  if (actor.kind === 'civilian') game.wanted.report('killcivilian', actor.position.x, actor.position.z);
+  if (actor.kind === 'cop') game.wanted.report('killcop', actor.position.x, actor.position.z);
+  if (actor.kind === 'thug' || actor.kind === 'boss' || rand() < 0.3) {
+    game.pickups.add('cash', actor.position.x + 0.6, actor.position.z, actor.kind === 'boss' ? 2500 : 40 + Math.floor(rand() * 120), true);
   }
+};
+
+game.onCarHit = (a, b) => {
+  const mine = a.driver === 'player' ? a : b.driver === 'player' ? b : null;
+  const other = mine === a ? b : a;
+  if (mine && other.type === 'police' && other.driver && other.driver !== 'player') game.wanted.report('ramcop', mine.position.x, mine.position.z);
+};
+
+game.onPlayerDied = () => {
+  game.stats.wasted += 1;
+  game.hud.banner('FLATLINED', 'Hospital bill: $500', '#ff3b4f', 4.5);
+  if (game.missions.active) game.missions.fail('You went down.');
+  game.respawnT = 4.5;
+  game.respawnAt = PLACES.hospital;
+  game.addCash(-500);
+};
+
+game.onBusted = () => {
+  if (game.player.dead || game.respawnT > 0) return;
+  game.stats.busted += 1;
+  game.hud.banner('CUFFED', 'Bail posted: $1,000', '#4f8bff', 4.5);
+  if (game.missions.active) game.missions.fail('You got arrested.');
+  game.player.body.pose = 'surrender';
+  game.respawnT = 4;
+  game.respawnAt = PLACES.precinct;
+  game.addCash(-1000);
+};
+
+game.onWantedCleared = () => {
+  game.hud.toast('You lost the cops.');
+};
+
+game.applySettings = () => {
+  const s = game.settings;
+  if (game.input) game.input.sensitivity = s.sensitivity;
+  game.audio.setVolume(s.master, s.music);
+  game.day.sun.castShadow = s.shadows;
+  scene.fog.density = 0.00105 / s.drawDistance;
+  camera.far = 2600 * s.drawDistance + 1200;
+  camera.updateProjectionMatrix();
+};
+
+game.startGame = (cont) => {
+  const p = game.player;
+  game.police.clearAll();
+  game.wanted.setLevel(0);
+  if (cont && game.save.load()) {
+    game.hud.toast('Welcome back to Coralina Bay.');
+  } else {
+    game.stats.cash = 250;
+    p.position.set(352, 0.16, -150);
+    game.day.setHour(17.6);
+    game.missions.index = 0;
+    game.hud.hint('~WASD~ move · ~Mouse~ look · ~F~ steal a car · ~Esc~ pause. Walk into the yellow marker to start a job.', 9);
+  }
+  game.missions.prepareNext();
+  game.mode = 'play';
+  game.menu.hide();
+  game.hud.show(true);
+  game.cameraRig.mode = 'foot';
+  game.cameraRig.yaw = Math.PI / 2 + 0.3;
+  if (game.input) game.input.lockPointer();
+  game.showDistrictFor = 0;
+};
+
+game.pause = () => {
+  if (game.mode !== 'play') return;
+  game.mode = 'paused';
+  game.menu.pause();
+  if (game.audio.ctx) game.audio.ctx.suspend();
+};
+
+game.resume = () => {
+  game.mode = 'play';
+  game.menu.hide();
+  if (game.audio.ctx) game.audio.ctx.resume();
+  if (game.input) game.input.lockPointer();
+};
+
+game.toTitle = () => {
+  if (game.player.vehicle) game.player.exitVehicle();
+  game.mode = 'title';
+  game.hud.show(false);
+  game.cameraRig.mode = 'cinematic';
+  game.menu.title();
+  if (game.audio.ctx) game.audio.ctx.resume();
+};
+
+/** One step of the simulation: everything that moves. */
+game.step = (dt) => {
+  game.time += dt;
+  const p = game.player;
+  p.update(dt);
+  game.traffic.update(dt);
+  game.police.update(dt);
+  game.vehicles.update(dt);
+  game.pedestrians.update(dt);
+  game.missions.update(dt);
+  game.pickups.update(dt);
+  game.wanted.update(dt);
+  game.effects.update(dt);
+  game.city.update(dt, game.time);
+  if (p.vehicle) game.stats.distance += Math.abs(p.vehicle.speed) * dt;
+  if (game.respawnT > 0) {
+    game.respawnT -= dt;
+    if (game.respawnT <= 0) {
+      game.police.clearAll();
+      game.wanted.setLevel(0);
+      p.respawn(game.respawnAt.x, game.respawnAt.z);
+      game.missions.prepareNext();
+    }
+  }
+  const district = districtAt(p.position.x, p.position.z);
+  if (district !== game.districtName) {
+    game.districtName = district;
+    if (game.mode === 'play') game.hud.showDistrict(district);
+  }
+};
+
+game.render = () => {
+  const focus = game.player.vehicle ? game.player.vehicle.position : game.player.position;
+  game.day.update(game.mode === 'play' ? 1 / 60 : 0, game.cameraRig.mode === 'cinematic' ? game.cameraRig.cine.centre : focus);
+  renderer.render(scene, camera);
+};
+
+function onResize() {
+  if (shotName) return;
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
 }
+window.addEventListener('resize', onResize);
 
-function saveBest(value) {
-  try {
-    window.localStorage.setItem(BEST_KEY, String(value));
-  } catch {
-    // Storage can be off (private windows): the best score then lasts this visit only.
-  }
-}
-
-function runShot(name) {
-  const scene = stageShot(name, world);
-  let painted = 0;
-  function paint() {
-    renderer.draw(world.state, scene.screen, scene.best);
-    painted += 1;
-    if (painted < 2) requestAnimationFrame(paint);
-    else window.__shotReady = true;
-  }
-  requestAnimationFrame(paint);
-}
-
-function runGame() {
-  const input = createInput(canvas);
-  let screen = SCREEN_TITLE;
-  let best = readBest();
-  let accumulator = 0;
-  let last = performance.now();
-
-  // Screen readers (and anyone watching the page's text) hear the screen changes and each hit.
-  function announce(message) {
-    status.textContent = message;
-  }
-
-  function startGame() {
-    world.reset();
-    accumulator = 0;
-    screen = SCREEN_PLAY;
-    announce(`Playing. ${LIVES} lives.`);
-  }
-
-  function endGame() {
-    screen = SCREEN_OVER;
-    if (world.state.score > best) {
-      best = world.state.score;
-      saveBest(best);
-    }
-    announce(`Game over. Score ${world.state.score}. Best ${best}.`);
-  }
-
-  function handleActions() {
-    const actions = input.takeActions();
-    if (actions & ACTION_CONFIRM && (screen === SCREEN_TITLE || screen === SCREEN_OVER)) startGame();
-    else if (actions & ACTION_PAUSE && screen === SCREEN_PLAY) {
-      screen = SCREEN_PAUSED;
-      announce('Paused.');
-    } else if (actions & (ACTION_PAUSE | ACTION_CONFIRM) && screen === SCREEN_PAUSED) {
-      screen = SCREEN_PLAY;
-      announce('Playing.');
-    }
-  }
-
-  function step() {
-    if (screen === SCREEN_TITLE) {
-      world.step(STEP, 0, true);
-      return;
-    }
-    const events = world.step(STEP, input.direction(), false);
-    if (events & EVENT_OVER) endGame();
-    else if (events & EVENT_HIT) announce(world.state.lives === 1 ? 'Hit. 1 life left.' : `Hit. ${world.state.lives} lives left.`);
-  }
-
-  function frame(now) {
-    requestAnimationFrame(frame);
-    accumulator += Math.min((now - last) / 1000, MAX_FRAME);
-    last = now;
-    handleActions();
-    if (screen === SCREEN_TITLE || screen === SCREEN_PLAY) {
-      while (accumulator >= STEP && (screen === SCREEN_TITLE || screen === SCREEN_PLAY)) {
-        step();
-        accumulator -= STEP;
-      }
-    } else {
-      accumulator = 0;
-    }
-    renderer.draw(world.state, screen, best);
-  }
-
-  // Leaving the tab pauses a running game rather than letting blocks fall unseen.
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden && screen === SCREEN_PLAY) {
-      screen = SCREEN_PAUSED;
-      announce('Paused.');
-    }
+if (game.input) {
+  canvas.addEventListener('click', () => { if (game.mode === 'play') game.input.lockPointer(); });
+  document.addEventListener('pointerlockchange', () => {
+    if (!document.pointerLockElement && game.mode === 'play') game.pause();
   });
+  window.addEventListener('keydown', (e) => {
+    if (e.code === 'Escape' && game.mode === 'paused') game.resume();
+    else if ((e.code === 'Escape' || e.code === 'KeyP') && game.mode === 'play') game.pause();
+  });
+}
 
-  announce('Block Dodger. Press Space or click to start.');
+let last = performance.now();
+function frame(now) {
+  const dt = Math.min(0.05, (now - last) / 1000);
+  last = now;
+  if (game.mode === 'play') {
+    game.step(dt);
+    game.cameraRig.update(dt);
+    game.audio.update();
+    game.hud.update(dt);
+    game.minimap.update();
+  } else if (game.mode === 'title') {
+    // the bay keeps living behind the title screen
+    game.player.position.set(game.cameraRig.cine.centre.x, 0, game.cameraRig.cine.centre.z);
+    game.player.body.root.visible = false;
+    game.time += dt;
+    game.traffic.update(dt);
+    game.vehicles.update(dt);
+    game.pedestrians.update(dt);
+    game.effects.update(dt);
+    game.city.update(dt, game.time);
+    game.cameraRig.update(dt);
+    game.audio.update();
+  }
+  game.render();
+  if (game.input) game.input.endFrame();
   requestAnimationFrame(frame);
 }
 
-if (shot) runShot(shot);
-else runGame();
+game.applySettings();
+document.getElementById('loading').classList.add('hidden');
+if (shotName) {
+  game.mode = 'shot';
+  runShot(game, shotName).then(() => { window.__shotReady = true; });
+} else {
+  game.toTitle();
+  requestAnimationFrame(frame);
+}
