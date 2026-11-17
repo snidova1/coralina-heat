@@ -34,7 +34,7 @@ export const VEHICLE_TYPES = {
   },
   police: {
     label: 'CBPD Interceptor', len: 4.7, wid: 1.95, wheelR: 0.38, wheelbase: 2.8, maxSpeed: 60, accel: 23, brake: 40, grip: 7, steer: 0.58, mass: 1.35,
-    colors: [0x101318],
+    colors: [0xf4f6f8],
     body: [[-2.35, 0.33], [2.32, 0.33], [2.38, 0.72], [1.3, 0.93], [-1.9, 0.97], [-2.36, 0.94], [-2.42, 0.6]],
     cabin: [[1.32, 0.92], [0.45, 1.42], [-1.0, 1.45], [-1.9, 0.96]],
   },
@@ -163,9 +163,22 @@ function buildModel(typeName, color) {
       door.rotation.y = s * Math.PI / 2;
       body.add(door);
     }
-    const hood = new THREE.Mesh(new THREE.BoxGeometry(T.wid * 0.84, 0.04, 1.0), paint(0xf4f6f8));
-    hood.position.set(0, 0.95, -1.4);
+    const hood = new THREE.Mesh(new THREE.BoxGeometry(T.wid * 0.86, 0.05, 1.1), paint(0x101318));
+    hood.position.set(0, 0.96, 1.75);
+    hood.rotation.x = 0.08;
     body.add(hood);
+    const trunk = new THREE.Mesh(new THREE.BoxGeometry(T.wid * 0.86, 0.05, 0.6), paint(0x101318));
+    trunk.position.set(0, 0.99, -2.05);
+    body.add(trunk);
+    const skirt = new THREE.Mesh(new THREE.BoxGeometry(T.wid + 0.02, 0.26, T.len * 0.92), paint(0x101318));
+    skirt.position.set(0, 0.47, 0);
+    body.add(skirt);
+    // red and blue light spilling onto the road round the cruiser
+    const spill = new THREE.Mesh(new THREE.PlaneGeometry(9, 11), new THREE.MeshBasicMaterial({ map: glowTexture(), color: 0xff2040, transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }));
+    spill.rotation.x = -Math.PI / 2;
+    spill.position.y = 0.07;
+    root.add(spill);
+    extras.spill = spill;
     const barY = Math.max(T.cabin[1][1], T.cabin[2][1]) + 0.14;
     const barZ = (T.cabin[1][0] + T.cabin[2][0]) / 2 + 0.2;
     const base = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.08, 0.3), m.dark);
@@ -397,6 +410,11 @@ export class Vehicle {
       const on = this.siren && (phase || Math.floor(t * 21) % 3 === 0);
       s.glow.visible = on;
       s.lamp.material.emissiveIntensity = on ? 4 : 0.3;
+    }
+    if (this.extras.spill) {
+      const red = Math.floor(t * 7) % 2 === 0;
+      this.extras.spill.visible = this.siren;
+      this.extras.spill.material.color.set(red ? 0xff2040 : 0x2a60ff);
     }
     const night = this.game.day ? this.game.day.nightAmount : 0;
     for (const b of this.beams) {

@@ -145,15 +145,22 @@ export class Minimap {
     ctx.translate(cx, cy);
     ctx.rotate(ang);
     ctx.beginPath();
-    ctx.moveTo(0, -10);
-    ctx.lineTo(7, 8);
+    ctx.moveTo(0, -12);
+    ctx.lineTo(9, 9);
     ctx.lineTo(0, 4);
-    ctx.lineTo(-7, 8);
+    ctx.lineTo(-9, 9);
     ctx.closePath();
-    ctx.fillStyle = '#ffffff';
-    ctx.strokeStyle = '#000';
-    ctx.lineWidth = 2;
+    ctx.fillStyle = '#ffb02e';
+    ctx.strokeStyle = '#2a1400';
+    ctx.lineWidth = 2.5;
     ctx.stroke();
+    ctx.fill();
+    ctx.fillStyle = '#fff3c0';
+    ctx.beginPath();
+    ctx.moveTo(0, -6);
+    ctx.lineTo(2.5, 2);
+    ctx.lineTo(0, 0.5);
+    ctx.closePath();
     ctx.fill();
     ctx.restore();
     // rim and north

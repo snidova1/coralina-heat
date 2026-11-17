@@ -13,7 +13,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
 const outIndex = args.indexOf('--out');
 const outDir = outIndex >= 0 ? args[outIndex + 1] : join(root, 'screenshots');
-const filter = args.find((a, i) => !a.startsWith('--') && i !== outIndex + 1 && args[i - 1] !== '--query');
+const filter = args.find((a, i) => !a.startsWith('--') && (outIndex < 0 || i !== outIndex + 1) && args[i - 1] !== '--query');
 const queryArgs = args.flatMap((a, i) => (a === '--query' ? [args[i + 1]] : []));
 const shots = queryArgs.length
   ? queryArgs.map((q, i) => ({ name: `q${i + 1}.jpg`, query: q }))

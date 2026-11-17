@@ -34,7 +34,6 @@ export class Effects {
     this.scene.add(this.flashLight);
     this.flashT = 0;
     this.tracers = [];
-    this.tracerMat = new THREE.LineBasicMaterial({ color: 0xfff2b0, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending });
     this.markers = [];
   }
 
@@ -78,11 +77,27 @@ export class Effects {
     this.flashT = time;
   }
 
+  /** A short glowing streak travelling down the bullet's path. */
   tracer(from, to) {
-    const g = new THREE.BufferGeometry().setFromPoints([from.clone(), to.clone()]);
-    const line = new THREE.Line(g, this.tracerMat.clone());
+    const dir = to.clone().sub(from);
+    const dist = dir.length();
+    if (dist < 0.5) return;
+    dir.normalize();
+    const len = Math.min(5, dist * 0.6);
+    const mid = from.clone().addScaledVector(dir, Math.min(dist - len / 2, dist * 0.45 + len / 2));
+    if (!this.tracerGeo) {
+      this.tracerGeo = new THREE.CylinderGeometry(0.035, 0.012, 1, 6, 1, true);
+      this.tracerGlowGeo = new THREE.CylinderGeometry(0.12, 0.04, 1, 8, 1, true);
+    }
+    const core = new THREE.Mesh(this.tracerGeo, new THREE.MeshBasicMaterial({ color: 0xfff0b0, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }));
+    const glow = new THREE.Mesh(this.tracerGlowGeo, new THREE.MeshBasicMaterial({ color: 0xff8a20, transparent: true, opacity: 0.45, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }));
+    const line = new THREE.Group();
+    line.add(core, glow);
+    line.position.copy(mid);
+    line.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
+    line.scale.set(1, len, 1);
     this.scene.add(line);
-    this.tracers.push({ line, t: 0.08 });
+    this.tracers.push({ line, t: 0.09, mats: [core.material, glow.material] });
   }
 
   sparks(x, y, z, n = 8) {
@@ -174,10 +189,11 @@ export class Effects {
     for (let i = this.tracers.length - 1; i >= 0; i--) {
       const tr = this.tracers[i];
       tr.t -= dt;
-      tr.line.material.opacity = Math.max(0, tr.t / 0.08);
+      tr.mats[0].opacity = Math.max(0, tr.t / 0.09);
+      tr.mats[1].opacity = Math.max(0, tr.t / 0.09) * 0.45;
       if (tr.t <= 0) {
         this.scene.remove(tr.line);
-        tr.line.geometry.dispose();
+        for (const m of tr.mats) m.dispose();
         this.tracers.splice(i, 1);
       }
     }

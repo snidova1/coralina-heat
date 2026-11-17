@@ -11,6 +11,53 @@ function mat(color, rough = 0.75, metal = 0) {
   return matCache.get(key);
 }
 
+/** A tropical print for shirts: leaves and hibiscus over the base colour. */
+const printCache = new Map();
+function printTexture(base) {
+  if (printCache.has(base)) return printCache.get(base);
+  const c = document.createElement('canvas');
+  c.width = c.height = 128;
+  const d = c.getContext('2d');
+  const col = new THREE.Color(base);
+  d.fillStyle = '#' + col.getHexString();
+  d.fillRect(0, 0, 128, 128);
+  let seed = base % 997;
+  const r = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  for (let i = 0; i < 26; i++) {
+    const x = r() * 128;
+    const y = r() * 128;
+    d.save();
+    d.translate(x, y);
+    d.rotate(r() * 6.28);
+    if (r() < 0.55) {
+      d.fillStyle = r() < 0.5 ? 'rgba(20,90,50,0.85)' : 'rgba(40,140,80,0.8)';
+      d.beginPath();
+      d.ellipse(0, 0, 13, 4.5, 0, 0, Math.PI * 2);
+      d.fill();
+    } else {
+      d.fillStyle = ['#fff4e0', '#ff4f6d', '#ffd23f', '#ffffff'][Math.floor(r() * 4)];
+      for (let k = 0; k < 5; k++) {
+        d.rotate(1.2566);
+        d.beginPath();
+        d.ellipse(5, 0, 5, 3, 0, 0, Math.PI * 2);
+        d.fill();
+      }
+      d.fillStyle = '#7a2a10';
+      d.beginPath();
+      d.arc(0, 0, 2, 0, 6.28);
+      d.fill();
+    }
+    d.restore();
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.repeat.set(2, 1);
+  const m = new THREE.MeshStandardMaterial({ map: t, roughness: 0.8 });
+  printCache.set(base, m);
+  return m;
+}
+
 const G = {};
 function geos() {
   if (G.torso) return G;
@@ -30,7 +77,17 @@ function geos() {
   G.brim = new THREE.CylinderGeometry(0.0, 0.11, 0.015, 14, 1, false, -Math.PI / 2, Math.PI).translate(0, 0.05, 0.1);
   G.upperArm = new THREE.CapsuleGeometry(0.052, 0.2, 4, 8).translate(0, -0.13, 0);
   G.foreArm = new THREE.CapsuleGeometry(0.045, 0.2, 4, 8).translate(0, -0.12, 0);
-  G.hand = new THREE.SphereGeometry(0.05, 8, 6).scale(0.8, 1.1, 0.6).translate(0, -0.27, 0);
+  G.hand = new THREE.CapsuleGeometry(0.036, 0.06, 3, 8).scale(1.15, 1, 0.62).translate(0, -0.29, 0);
+  G.thumb = new THREE.CapsuleGeometry(0.014, 0.035, 3, 6).rotateZ(0.5).translate(0.03, -0.27, 0.015);
+  G.deltoid = new THREE.SphereGeometry(0.068, 10, 8).scale(1, 0.9, 0.95);
+  G.collar = new THREE.TorusGeometry(0.065, 0.018, 6, 14).rotateX(Math.PI / 2).translate(0, 0.6, 0.005);
+  G.ear = new THREE.SphereGeometry(0.026, 6, 6).scale(0.5, 1, 0.8);
+  G.brow = new THREE.BoxGeometry(0.04, 0.009, 0.012);
+  G.mouth = new THREE.BoxGeometry(0.045, 0.008, 0.01);
+  G.shades = new THREE.BoxGeometry(0.17, 0.035, 0.02);
+  G.sole = new THREE.BoxGeometry(0.1, 0.03, 0.24).translate(0, -0.465, 0.05);
+  G.bun = new THREE.SphereGeometry(0.06, 10, 8).translate(0, 0.08, -0.1);
+  G.afro = new THREE.SphereGeometry(0.15, 12, 10).scale(1.05, 0.95, 1.05).translate(0, 0.05, -0.02);
   G.thigh = new THREE.CapsuleGeometry(0.078, 0.3, 4, 8).translate(0, -0.2, 0);
   G.shin = new THREE.CapsuleGeometry(0.062, 0.3, 4, 8).translate(0, -0.2, 0);
   G.foot = new THREE.CapsuleGeometry(0.048, 0.14, 4, 8).rotateX(Math.PI / 2).translate(0, -0.42, 0.05);
@@ -50,11 +107,12 @@ export function randomLook(kind = 'civilian') {
   const look = {
     skin: pick(SKIN), hair: pick(HAIR), shirt: pick(SHIRTS), pants: pick(PANTS), shoes: pick([0x222222, 0xffffff, 0x8a5a3a, 0xd04040]),
     build: 0.9 + rand() * 0.22, height: 0.94 + rand() * 0.12, longHair: rand() < 0.4, shorts: rand() < 0.35, skirt: rand() < 0.15, cap: rand() < 0.15, capColor: pick(SHIRTS), vest: false,
+    print: rand() < 0.3, shades: rand() < 0.3, hairStyle: pick(['short', 'short', 'bun', 'afro', 'bald']),
   };
-  if (kind === 'cop') Object.assign(look, { shirt: 0x24365e, pants: 0x1c2741, shoes: 0x111111, cap: true, capColor: 0x1c2741, shorts: false, skirt: false, longHair: false, vest: true, vestColor: 0x2a2f36 });
-  if (kind === 'thug') Object.assign(look, { shirt: pick([0x14b8a6, 0x0f766e, 0x111111]), pants: pick([0x1f1f1f, 0x2b3a55]), cap: rand() < 0.6, capColor: 0xd7263d, shorts: false, skirt: false, longHair: false, build: 1.08 });
-  if (kind === 'player') Object.assign(look, { skin: 0xc98b62, hair: 0x1a120c, shirt: 0xf6f1e4, pants: 0x3a4a63, shoes: 0x6b3d24, longHair: false, shorts: false, skirt: false, cap: false, build: 1.05, height: 1.02, vest: false, vestColor: 0x34404c });
-  if (kind === 'boss') Object.assign(look, { shirt: 0xf2f2f2, pants: 0xf2f2f2, shoes: 0xf2f2f2, cap: false, build: 1.18, height: 1.05, shorts: false, skirt: false, hair: 0x111111 });
+  if (kind === 'cop') Object.assign(look, { print: false, shades: rand() < 0.5, hairStyle: 'short', shirt: 0x24365e, pants: 0x1c2741, shoes: 0x111111, cap: true, capColor: 0x1c2741, shorts: false, skirt: false, longHair: false, vest: true, vestColor: 0x2a2f36 });
+  if (kind === 'thug') Object.assign(look, { print: rand() < 0.5, hairStyle: 'short', shirt: pick([0x14b8a6, 0x0f766e, 0x111111]), pants: pick([0x1f1f1f, 0x2b3a55]), cap: rand() < 0.6, capColor: 0xd7263d, shorts: false, skirt: false, longHair: false, build: 1.08 });
+  if (kind === 'player') Object.assign(look, { print: false, shades: true, hairStyle: 'short', skin: 0xc98b62, hair: 0x1a120c, shirt: 0xf6f1e4, pants: 0x3a4a63, shoes: 0x6b3d24, longHair: false, shorts: false, skirt: false, cap: false, build: 1.05, height: 1.02, vest: false, vestColor: 0x34404c });
+  if (kind === 'boss') Object.assign(look, { print: true, shades: true, hairStyle: 'bald', shirt: 0xf2f2f2, pants: 0xf2f2f2, shoes: 0xf2f2f2, cap: false, build: 1.18, height: 1.05, shorts: false, skirt: false, hair: 0x111111 });
   return look;
 }
 
@@ -67,7 +125,7 @@ export class Humanoid {
     this.hips.position.y = 0.95;
     this.root.add(this.hips);
     const skin = mat(look.skin, 0.6);
-    const shirt = mat(look.shirt, 0.8);
+    const shirt = look.print ? printTexture(look.shirt) : mat(look.shirt, 0.8);
     const pants = mat(look.pants, 0.85);
     const shoes = mat(look.shoes, 0.5);
     const add = (parent, geo, material, x = 0, y = 0, z = 0) => {
@@ -87,6 +145,7 @@ export class Humanoid {
     if (look.vest) add(this.chest, g.vest, mat(look.vestColor || 0x2a2f36, 0.7)).scale.set(look.build * 1.02, 1, look.build * 1.05);
     if (look.skirt) add(this.hips, g.skirt, pants);
     add(this.chest, g.neck, skin, 0, 0.65, 0);
+    add(this.chest, g.collar, mat(new THREE.Color(look.shirt).multiplyScalar(0.8).getHex(), 0.8));
     this.head = new THREE.Group();
     this.head.position.y = 0.79;
     this.chest.add(this.head);
@@ -96,8 +155,17 @@ export class Humanoid {
     const eyeMat = mat(0x111111, 0.3);
     add(this.head, g.eye, eyeMat, -0.04, 0.015, 0.1);
     add(this.head, g.eye, eyeMat, 0.04, 0.015, 0.1);
-    add(this.head, g.hairShort, mat(look.hair, 0.9));
-    if (look.longHair) add(this.head, g.hairLong, mat(look.hair, 0.9));
+    const hairMat = mat(look.hair, 0.9);
+    const style = look.longHair ? 'long' : look.hairStyle || 'short';
+    if (style !== 'bald' || look.cap) add(this.head, style === 'afro' ? g.afro : g.hairShort, hairMat);
+    if (style === 'long') add(this.head, g.hairLong, hairMat);
+    if (style === 'bun') add(this.head, g.bun, hairMat);
+    for (const s of [-1, 1]) {
+      add(this.head, g.ear, skin, s * 0.105, 0, 0);
+      add(this.head, g.brow, hairMat, s * 0.04, 0.045, 0.104).rotation.z = s * -0.12;
+    }
+    add(this.head, g.mouth, mat(0x6a2a24, 0.6), 0, -0.07, 0.1);
+    if (look.shades) add(this.head, g.shades, mat(0x101418, 0.15, 0.6), 0, 0.018, 0.108);
     if (look.cap) {
       add(this.head, g.cap, mat(look.capColor, 0.7));
       add(this.head, g.brim, mat(look.capColor, 0.7));
@@ -107,12 +175,14 @@ export class Humanoid {
       const shoulder = new THREE.Group();
       shoulder.position.set(s * sw, 0.52, 0);
       this.chest.add(shoulder);
+      add(shoulder, g.deltoid, shirt);
       add(shoulder, g.upperArm, shirt);
       const elbow = new THREE.Group();
       elbow.position.y = -0.27;
       shoulder.add(elbow);
       add(elbow, g.foreArm, skin);
       add(elbow, g.hand, skin);
+      add(elbow, g.thumb, skin).rotation.y = s > 0 ? 0 : Math.PI;
       shoulder.rotation.z = s * 0.08;
       return { shoulder, elbow };
     });
@@ -126,6 +196,7 @@ export class Humanoid {
       hip.add(knee);
       add(knee, g.shin, look.shorts || look.skirt ? skin : pants);
       add(knee, g.foot, shoes);
+      add(knee, g.sole, mat(0xf2f2ee, 0.7));
       return { hip, knee };
     });
     // a pistol carried in the right hand, shown when armed

@@ -68,8 +68,9 @@ export class CameraRig {
         // over the right shoulder
         const rx = -Math.cos(this.yaw);
         const rz = Math.sin(this.yaw);
-        this.target.x += rx * 0.65;
-        this.target.z += rz * 0.65;
+        this.target.x += rx * 0.95;
+        this.target.z += rz * 0.95;
+        this.target.y += 0.1;
         fovTarget = 52;
       }
     }

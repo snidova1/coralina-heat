@@ -69,7 +69,7 @@ const SCENES = {
     car.driver = 'player';
     p.position.copy(car.position);
     const cops = [];
-    for (const [z, off] of [[-32, 3.0], [-24, -0.2], [-14, 3.6]]) {
+    for (const [z, off] of [[-35.5, 0.2], [-31, 3.6], [-24, 1.2]]) {
       const pt = lane(z, off);
       const c = game.police.spawnCruiser(pt.x, pt.z, Math.PI);
       c.vx = 0; c.vz = -37;
@@ -96,7 +96,7 @@ const SCENES = {
       driveToward(car, 362.6, car.position.z - 40, 34, DT);
       car.controls.throttle = 1;
       car.controls.steer = -0.18;
-      if (game.police.heli) game.police.heli.pos.set(car.position.x - 9, 17, car.position.z + 34);
+      if (game.police.heli) game.police.heli.pos.set(car.position.x - 7, 19, car.position.z + 30);
     });
     car.controls.handbrake = false;
     const c = car.position;
@@ -118,12 +118,12 @@ const SCENES = {
     p.position.set(47.6, 0.16, -96);
     p.heading = Math.PI;
     p.current = 'fists';
-    for (const [x, z, tx, tz] of [[48.6, -112, 48.6, -40], [50.5, -126, 50.5, -30], [31, -104, 31, -180], [31.5, -88, 31.5, -170], [47.2, -140, 47.2, -40], [58, -129.4, 120, -129.4], [70, -130.6, 20, -130.6], [32, -140, 32, -40]]) {
+    for (const [x, z, tx, tz] of [[48.6, -121, 48.6, -200], [50.5, -126, 50.5, -200], [31, -104, 31, -180], [31.5, -88, 31.5, -170], [47.2, -140, 47.2, -200], [58, -129.4, 120, -129.4], [70, -130.6, 20, -130.6], [32, -140, 32, -40], [46.4, -112, 46.4, -200], [51.2, -108, 51.2, -200], [49.5, -118, 49.5, -200], [33, -118, 33, -30], [30.6, -126, 30.6, -200], [52, -134, 52, -30], [36, -129.2, 70, -129.2], [62, -130.8, 0, -130.8], [48, -150, 48, -40], [51.5, -160, 51.5, -40]]) {
       walker(game, x, z, tx, tz, 1.2 + (x % 3) * 0.15);
     }
     const north = { dx: 0, dz: -1 };
     const south = { dx: 0, dz: 1 };
-    for (const [along, dir, type] of [[-30, north, 'taxi'], [-60, north, 'sedan'], [-18, south, 'pickup'], [-48, south, 'sports'], [-70, north, 'sedan']]) {
+    for (const [along, dir, type] of [[-26, north, 'taxi'], [-52, north, 'sedan'], [-16, south, 'pickup'], [-42, south, 'sports'], [-68, north, 'police'], [-62, south, 'sedan'], [-12, north, 'sedan']]) {
       game.traffic.spawnAt(5, dir === north ? 3 : 2, dir, along, type);
     }
     startMission(game, 3, 0);
