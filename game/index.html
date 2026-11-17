@@ -6,13 +6,13 @@
 <title>Coralina Heat</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="./style.css">
-<script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js" } }</script>
+<script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js", "GLTFLoader": "./vendor/GLTFLoader.min.js", "SkeletonUtils": "./vendor/SkeletonUtils.min.js" } }</script>
 </head>
 <body>
 <canvas id="game" aria-label="Coralina Heat: an open-world crime game set in Coralina Bay"></canvas>
 <div id="hud"></div>
 <div id="menu"></div>
-<div id="loading"><b>CORALINA HEAT</b><span>Loading Coralina Bay…</span></div>
+<div id="loading"><b>CORALINA HEAT</b><span>Loading Coralina Bay…</span><progress max="1" value="0" aria-label="Loading city assets"></progress></div>
 <script type="module" src="./src/main.js"></script>
 </body>
 </html>

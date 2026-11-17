@@ -8,7 +8,7 @@ const KEYS = [
   { h: 7.5, top: 0x3d7fd0, hor: 0xffd2a8, sun: 0xffe0b8, sunI: 2.2, hemi: 0.75, fog: 0xd8c4b0, night: 0.1 },
   { h: 12, top: 0x2f78d8, hor: 0xbfe0f4, sun: 0xfff6e8, sunI: 3.0, hemi: 0.9, fog: 0xbcd6e6, night: 0 },
   { h: 16.5, top: 0x2a6ad8, hor: 0xffd29a, sun: 0xffdca8, sunI: 3.4, hemi: 0.55, fog: 0xead0a4, night: 0 },
-  { h: 18.4, top: 0x1f4aa8, hor: 0xffa24f, sun: 0xffa850, sunI: 4.4, hemi: 0.4, fog: 0xf4aa6c, night: 0.25 },
+  { h: 18.4, top: 0x315d95, hor: 0xffbd85, sun: 0xffc18a, sunI: 3.0, hemi: 0.7, fog: 0xe8bc98, night: 0.25 },
   { h: 19.6, top: 0x24275e, hor: 0xe8607a, sun: 0xff7050, sunI: 0.9, hemi: 0.4, fog: 0x9a5a78, night: 0.7 },
   { h: 21, top: 0x0c1236, hor: 0x2a2a5a, sun: 0x8090c0, sunI: 0.2, hemi: 0.28, fog: 0x1e2244, night: 1 },
   { h: 24, top: 0x0a1030, hor: 0x1c2450, sun: 0x8090c0, sunI: 0.15, hemi: 0.25, fog: 0x161c38, night: 1 },
@@ -85,9 +85,9 @@ export class DayCycle {
     this.sun.castShadow = true;
     this.sun.shadow.mapSize.set(2048, 2048);
     const sc = this.sun.shadow.camera;
-    sc.left = -130; sc.right = 130; sc.top = 130; sc.bottom = -130; sc.near = 10; sc.far = 900;
+    sc.left = -65; sc.right = 65; sc.top = 65; sc.bottom = -65; sc.near = 10; sc.far = 900;
     this.sun.shadow.bias = -0.0004;
-    this.sun.shadow.normalBias = 0.6;
+    this.sun.shadow.normalBias = 0.035;
     scene.add(this.sun, this.sun.target);
     this.hemi = new THREE.HemisphereLight(0xbcd8ff, 0xb08a60, 0.6);
     scene.add(this.hemi);

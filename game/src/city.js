@@ -2,6 +2,7 @@
 // glass towers of Coral Heights, pastel walk-ups, the Venetia Canal and its bridges, Kingfish Marina,
 // the Sunspan Bridge, palms, neon, billboards and the ocean. It also owns building collision.
 import * as THREE from 'three';
+import { instanceProps, hasModel } from './assets.js';
 import { GeometryBucket } from './geometry.js';
 import { facadeTextures, surfaceTexture, waterNormals, neonSignTexture, decalTexture, glowTexture } from './textures.js';
 import { makeStream } from './rng.js';
@@ -52,6 +53,7 @@ export class City {
     this.buildStreetFurniture();
     this.flushBuildings();
     this.buildPalms();
+    this.buildAssetPlazas();
   }
 
   // ---------- land, beach and water ----------
@@ -108,6 +110,16 @@ export class City {
     beach.receiveShadow = true;
     this.scene.add(beach);
     // lifeguard towers, umbrellas and loungers
+    if (hasModel('prop_umbrella') && hasModel('prop_lifeguard')) {
+      const umbrellas = [];
+      for (let z = -380; z < 390; z += 17) {
+        if (z > 5 && z < 75) continue;
+        for (const x of [382, 399, 416]) umbrellas.push([x, this.beachHeight(x), z + this.rnd() * 4, 0.85 + this.rnd() * 0.25, this.rnd() * Math.PI * 2]);
+      }
+      instanceProps(this.scene, 'prop_umbrella', umbrellas, 2.6);
+      instanceProps(this.scene, 'prop_lifeguard', [-300, -110, 160, 300].map((z) => [390, this.beachHeight(390), z, 1, -Math.PI / 2]), 5.8);
+      return;
+    }
     const umbrellaColors = [0xff5f6d, 0x2fb8ac, 0xffc93c, 0x5b8cff, 0xffffff];
     const ub = new GeometryBucket(true);
     const m = new THREE.Matrix4();
@@ -384,7 +396,7 @@ export class City {
         continue;
       }
       const mat = new THREE.MeshStandardMaterial({
-        map: tex.map, color: tint, emissiveMap: tex.lit, emissive: 0xffffff, emissiveIntensity: 0.05,
+        map: tex.map, color: new THREE.Color(tint).lerp(new THREE.Color(0xffffff), 0.65), emissiveMap: tex.lit, emissive: tex.lit ? 0xffffff : 0x000000, emissiveIntensity: 0.05,
         roughness: glass ? 0.12 : 0.85, metalness: glass ? 0.55 : 0,
       });
       this.facadeMaterials.push(mat);
@@ -637,12 +649,17 @@ export class City {
   buildPalms() {
     for (let z = LINE_MIN - 30; z < ISLAND.maxZ; z += 15) {
       if (z > CANAL.zMin - 2 && z < CANAL.zMax + 2) continue;
-      this.palms.push([BOULEVARD_X + ROAD_HALF + 3, z, 1 + this.rnd() * 0.35]);
+      // Leave a clear promenade access opposite the lifeguard station.
+      if (z < -120 || z > -85) this.palms.push([BOULEVARD_X + ROAD_HALF + 3, z, 1 + this.rnd() * 0.35]);
       if (this.rnd() < 0.7) this.palms.push([BEACH.x0 + 4 + this.rnd() * 30, z + this.rnd() * 8, 0.9 + this.rnd() * 0.4]);
       this.palms.push([BOULEVARD_X - ROAD_HALF - 2.5, z + 7, 0.95 + this.rnd() * 0.3]);
     }
     for (let x = LINE_MIN; x < LINE_MAX; x += 22) {
       this.palms.push([x + 11, LINE_MAX + ROAD_HALF + 3, 0.9 + this.rnd() * 0.3]);
+    }
+    if (instanceProps(this.scene, 'prop_palm', this.palms.map((p) => [p[0], p[0] > BEACH.x0 ? this.beachHeight(p[0]) : 0.16, p[1], p[2], this.rnd() * Math.PI * 2]), 9)) {
+      for (const p of this.palms) this.addCollider(p[0] - 0.22, p[1] - 0.22, p[0] + 0.22, p[1] + 0.22, 8, 'palm');
+      return;
     }
     const variants = [0, 1, 2].map((v) => palmGeometry(makeStream(400 + v)));
     const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.8, side: THREE.DoubleSide });
@@ -662,6 +679,16 @@ export class City {
       im.castShadow = true;
       this.scene.add(im);
     });
+  }
+
+  buildAssetPlazas() {
+    const locations = [[52, -128, Math.PI / 2], [203, -9, Math.PI / 2], [370, -185, 0], [-49, -210, Math.PI], [370, 235, Math.PI]];
+    instanceProps(this.scene, 'prop_foodtruck', locations.map(([x, z, a]) => [x, 0.16, z, 1, a]), 5.3, 'z');
+    if (hasModel('prop_foodtruck')) for (const [x, z, a] of locations) {
+      const w = Math.abs(Math.sin(a)) > 0.5 ? 2.6 : 1.4;
+      const d = w > 2 ? 1.4 : 2.6;
+      this.addCollider(x - w, z - d, x + w, z + d, 3, 'foodtruck');
+    }
   }
 
   // ---------- per-frame and queries ----------

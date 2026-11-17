@@ -2,6 +2,7 @@
 // cash, districts), runs the main loop for the title screen, play and pause, and hands the
 // ?shot= screenshot scenes to shots.js.
 import * as THREE from 'three';
+import { preloadAssets, assetReport } from './assets.js';
 import { seedRandom, rand } from './rng.js';
 import { Input } from './input.js';
 import { Roads } from './roads.js';
@@ -38,12 +39,14 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.05;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+await preloadAssets(renderer);
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(62, window.innerWidth / window.innerHeight, 0.3, 4200);
 
 const game = {
-  THREE, scene, camera, renderer, time: 0, mode: 'loading', godMode: false,
+  THREE, scene, camera, renderer, assetReport, time: 0, mode: 'loading', godMode: false,
   stats: { cash: 0, missionsDone: 0, kills: 0, distance: 0, carsStolen: 0, busted: 0, wasted: 0 },
 };
 window.coralina = game;

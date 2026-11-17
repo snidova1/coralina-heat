@@ -69,7 +69,7 @@ const SCENES = {
     car.driver = 'player';
     p.position.copy(car.position);
     const cops = [];
-    for (const [z, off] of [[-35.5, 0.2], [-31, 3.6], [-24, 1.2]]) {
+    for (const [z, off] of [[-30, -0.6], [-24, 3.5], [-17, -1.6]]) {
       const pt = lane(z, off);
       const c = game.police.spawnCruiser(pt.x, pt.z, Math.PI);
       c.vx = 0; c.vz = -37;
@@ -99,8 +99,20 @@ const SCENES = {
       if (game.police.heli) game.police.heli.pos.set(car.position.x - 7, 19, car.position.z + 30);
     });
     car.controls.handbrake = false;
+    car.skid = 1;
+    for (let k = 0; k < 5; k++) game.effects.tireSmoke(car.position.x + 0.6, car.position.z + 2 + k * 0.35);
     const c = car.position;
-    camOverride(game, [c.x + 5.5, 2.3, c.z - 9.5, c.x - 1.8, 1.9, c.z + 9], 60);
+    cops.forEach((v, i) => {
+      v.position.set(c.x + [-3.8, 0.1, -4.5][i], 0, c.z + [10, 19, 29][i]);
+      v.heading = Math.PI + [0.06, -0.08, 0.04][i];
+      v.syncMesh(0);
+    });
+    for (const [x, z, type] of [[355.3, c.z + 23, 'taxi'], [356.1, c.z + 48, 'pickup']]) {
+      const v = game.vehicles.spawn(type, x, z, 0);
+      v.vz = 13;
+      v.syncMesh(0);
+    }
+    camOverride(game, [c.x + 6.5, 2.6, c.z - 11, c.x - 2.2, 2.1, c.z + 16], 60);
     game.hud.showVehicleName('Vortice GT');
     game.hud.update(DT);
     game.minimap.update();
@@ -137,13 +149,14 @@ const SCENES = {
       const nz = p.position.z - 4.6 * DT;
       p.position.z = nz;
     });
-    p.body.speed = 4.6;
+    p.body.speed = 1.65;
+    p.body.update(0.12);
     game.missions.talkT = 0;
     game.missions.talkLine = 0;
     game.hud.subtitle(CAST.vera.name, CAST.vera.color, 'Mr. Reyes. Ocho drives a Vortice GT he hasn\'t paid for. I\'d like it to be ~mine~.', 4);
     game.hud.setObjective('Hot Wheels', 'Meet ~Vera Lux~ at the foot of ~Lux Tower~.');
     game.cameraRig.update(DT);
-    if (params.get('cam')) camOverride(game, [], 62);
+    camOverride(game, [50.6, 2.1, p.position.z + 4.5, 44, 2.4, p.position.z - 24], 60);
     game.hud.update(DT);
     game.minimap.update();
     game.render();
@@ -157,26 +170,33 @@ const SCENES = {
     game.day.frozen = true;
     game.stats.cash = 71400;
     const p = game.player;
-    p.position.set(184, 0.16, 381);
-    p.giveWeapon('smg', 160);
-    p.current = 'smg';
+    p.position.set(370, 0.16, -84);
+    p.giveWeapon('pistol', 72);
+    p.current = 'pistol';
     p.armor = 45;
     p.health = 72;
     startMission(game, 5, 3);
     const enemies = game.missions.enemies;
-    for (const e of enemies) e.brain.alert = true;
+    const positions = [[369.1, -102], [372, -110], [370, -121], [378, -107], [375.5, -125], [371, -133]];
+    enemies.forEach((e, i) => {
+      e.position.set(positions[i][0], 0.16, positions[i][1]);
+      e.brain.guard = { x: e.position.x, z: e.position.z };
+      e.brain.alert = true;
+      e.brain.range = 45;
+      e.brain.strafe = 0;
+    });
     game.hud.show(true);
     game.cameraRig.mode = 'foot';
-    game.cameraRig.yaw = -Math.PI / 2 - 0.08;
+    game.cameraRig.yaw = Math.PI;
     game.cameraRig.pitch = 0.05;
     p.aiming = true;
-    await simulate(game, 1.6, () => {
+    await simulate(game, 0.6, () => {
       p.heading = game.cameraRig.yaw;
       for (const e of enemies) if (e.brain) e.brain.fireT = 5;
     });
     // one goes down, the rest return fire as the player squeezes the trigger
     enemies[2].damage(500, 'player');
-    for (let k = 0; k < 40; k++) game.step(DT);
+    for (let k = 0; k < 20; k++) game.step(DT);
     p.aiming = true;
     p.body.pose = 'aim';
     p.body.setArmed(true);
@@ -186,6 +206,8 @@ const SCENES = {
     game.cameraRig.update(DT);
     game.camera.fov = 46;
     game.camera.updateProjectionMatrix();
+    camOverride(game, [371.8, 2.15, -78.5, 371, 1.45, -108], 54);
+    game.effects.addMarker(370, -141, 0xffd23f);
     p.body.aimPitch = 0.08;
     p.body.update(0);
     p.body.root.position.copy(p.position);
@@ -218,7 +240,7 @@ const SCENES = {
     game.player.body.root.visible = false;
     await simulate(game, 1.5);
     game.menu.title();
-    camOverride(game, [470, 60, 40, 40, 30, -160], 55);
+    camOverride(game, [500, 98, -200, 110, 10, 5], 57);
     game.render();
     await frames(3);
     game.render();

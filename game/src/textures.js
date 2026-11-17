@@ -2,6 +2,7 @@
 // the evening), asphalt, pavement, sand, the ocean's ripple normals, glows and neon signs.
 // No image files: every pixel of Coralina Bay is painted here.
 import * as THREE from 'three';
+import { assetTexture } from './assets.js';
 import { makeStream } from './rng.js';
 
 const cache = new Map();
@@ -32,6 +33,8 @@ function noise(ctx, w, h, amount, rnd, alpha = 0.08) {
 
 /** A facade style: `map` is the daylight look, `lit` the windows that glow after sunset. */
 export function facadeTextures(style) {
+  const asset = assetTexture(style === 'glass' || style === 'office' ? 'tex_facade_glass' : 'tex_facade_deco');
+  if (asset && !style.startsWith('shop') && style !== 'warehouse') return { map: asset, lit: null };
   if (cache.has('facade-' + style)) return cache.get('facade-' + style);
   const S = 512;
   const day = canvas(S, S);
@@ -198,6 +201,8 @@ export function facadeTextures(style) {
 }
 
 export function surfaceTexture(kind) {
+  const asset = assetTexture(kind === 'asphalt' ? 'tex_asphalt' : kind === 'pavement' ? 'tex_sidewalk' : '');
+  if (asset) return asset;
   if (cache.has(kind)) return cache.get(kind);
   const S = 256;
   const c = canvas(S, S);

@@ -2,6 +2,7 @@
 // head with hair), jointed at hips, knees, shoulders and elbows, with walk, run, aim, punch,
 // cower and fall poses. Everyone in Coralina Bay, the player included, is one of these.
 import * as THREE from 'three';
+import { createCharacter } from './assets.js';
 import { rand, pick } from './rng.js';
 
 const matCache = new Map();
@@ -105,7 +106,7 @@ const PANTS = [0x2b3a55, 0x3c3c3c, 0xd8c8a8, 0xeeeeee, 0x4a6a8a, 0x6b4f3a, 0x1f1
 
 export function randomLook(kind = 'civilian') {
   const look = {
-    skin: pick(SKIN), hair: pick(HAIR), shirt: pick(SHIRTS), pants: pick(PANTS), shoes: pick([0x222222, 0xffffff, 0x8a5a3a, 0xd04040]),
+    kind, skin: pick(SKIN), hair: pick(HAIR), shirt: pick(SHIRTS), pants: pick(PANTS), shoes: pick([0x222222, 0xffffff, 0x8a5a3a, 0xd04040]),
     build: 0.9 + rand() * 0.22, height: 0.94 + rand() * 0.12, longHair: rand() < 0.4, shorts: rand() < 0.35, skirt: rand() < 0.15, cap: rand() < 0.15, capColor: pick(SHIRTS), vest: false,
     print: rand() < 0.3, shades: rand() < 0.3, hairStyle: pick(['short', 'short', 'bun', 'afro', 'bald']),
   };
@@ -118,6 +119,8 @@ export function randomLook(kind = 'civilian') {
 
 export class Humanoid {
   constructor(look = randomLook()) {
+    const asset = createCharacter(look);
+    if (asset) return asset;
     const g = geos();
     this.look = look;
     this.root = new THREE.Group();

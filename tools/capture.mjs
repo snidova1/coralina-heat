@@ -39,8 +39,8 @@ try {
     await page.goto(`http://localhost:${PORT}/${shot.query}`, { waitUntil: 'load' });
     try {
       await page.waitForFunction('window.__shotReady === true', { timeout: Number(process.env.SHOT_TIMEOUT || 90000), polling: 200 });
-    } catch {
-      console.log('timeout waiting for', shot.name);
+    } catch (error) {
+      throw new Error(`Scene not ready: ${shot.name}\n${logs.join('\n')}`, { cause: error });
     }
     const file = join(outDir, shot.name);
     let quality = 88;
@@ -50,6 +50,8 @@ try {
       quality -= 6;
     }
     console.log(shot.name, 'q' + quality, Math.round(statSync(file).size / 1024) + 'KiB');
+    if (statSync(file).size > LIMIT) throw new Error(`JPEG exceeds 250 KiB: ${shot.name}`);
+    if (logs.some((l) => l.startsWith('pageerror:') || l.startsWith('error:'))) throw new Error(logs.join('\n'));
     for (const l of logs.filter((x) => !x.startsWith('log: [shot]')).slice(0, 12)) console.log('  ', l);
     await page.close();
   }

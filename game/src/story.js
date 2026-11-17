@@ -1,11 +1,11 @@
-// The story of Coralina Heat: Nico Reyes comes home to Coralina Bay after six years away and works
+// The story of Coralina Heat: Rafa Reyes comes home to Coralina Bay after six years away and works
 // his way from motel errands to taking down Saint Ocho's Tiburones crew. The cast, and the six jobs
 // as data: what each step asks, where, and what the characters say.
 import { PLACES } from './map.js';
 
 export const CAST = {
-  nico: { name: 'NICO', color: '#ffffff' },
-  paloma: { name: 'PALOMA', color: '#ff7ab8', full: 'Paloma Vega', blurb: 'Runs the Flamingo Rest motel. Raised Nico, mostly.' },
+  nico: { name: 'RAFA', color: '#ffffff' },
+  paloma: { name: 'PALOMA', color: '#ff7ab8', full: 'Paloma Vega', blurb: 'Runs the Flamingo Rest motel. Raised Rafa, mostly.' },
   tito: { name: 'TITO', color: '#ffd23f', full: 'Tito Brass', blurb: 'Bayline Cab dispatcher. Moves anything, asks nothing.' },
   vera: { name: 'VERA', color: '#c79bff', full: 'Vera Lux', blurb: 'Owns Lux Tower and half the skyline. Wants the other half.' },
   crane: { name: 'DET. CRANE', color: '#6fb7ff', full: 'Det. Hollis Crane', blurb: 'CBPD. Badge for rent, hourly.' },
@@ -17,7 +17,7 @@ export const MISSIONS = [
   {
     id: 'back-in-the-bay', title: 'Back in the Bay', giver: 'paloma', reward: 500, start: { x: 352, z: -168 },
     steps: [
-      { type: 'talk', lines: [['paloma', 'Six years, Nico. Six. And you walk in like you went out for cigarettes.'], ['nico', 'Missed you too, Auntie.'], ['paloma', 'The Tiburones are squeezing every business on Ocean Drive. I need wheels and I need you.']] },
+      { type: 'talk', lines: [['paloma', 'Six years, Rafa. Six. And you walk in like you went out for cigarettes.'], ['nico', 'Missed you too, Auntie.'], ['paloma', 'The Tiburones are squeezing every business on Ocean Drive. I need wheels and I need you.']] },
       { type: 'enterVehicle', text: 'Get a car. Any car. Press F next to one.' },
       { type: 'goto', x: 345, z: 72, r: 7, vehicle: true, text: 'Drive across the canal bridge to the ~Ocean Drive lot~.' },
       { type: 'talk', lines: [['paloma', 'Not bad. You still drive like a stolen car is a rental.'], ['paloma', 'Tito at the marina owes me. Go see him.']] },

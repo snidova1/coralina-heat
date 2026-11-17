@@ -24,8 +24,11 @@ export class Roads {
     const ext = LINE_MAX + ROAD_HALF;
     const lo = LINE_MIN - ROAD_HALF;
     for (const L of LINES) {
-      asphalt.flat(L - ROAD_HALF, lo, L + ROAD_HALF, ext, ROAD_Y, 16);
-      asphalt.flat(lo, L - ROAD_HALF, ext, L + ROAD_HALF, ROAD_Y + 0.001, 16);
+      asphalt.flat(L - ROAD_HALF, lo, L + ROAD_HALF, ext, ROAD_Y, 5);
+      // Horizontal strips stop at vertical streets: no coplanar overlapping asphalt.
+      for (let i = 0; i < LINES.length - 1; i++) {
+        asphalt.flat(LINES[i] + ROAD_HALF, L - ROAD_HALF, LINES[i + 1] - ROAD_HALF, L + ROAD_HALF, ROAD_Y, 5);
+      }
     }
     asphalt.flat(BRIDGE.x0, BRIDGE.z - ROAD_HALF, lo, BRIDGE.z + ROAD_HALF, ROAD_Y, 16);
 

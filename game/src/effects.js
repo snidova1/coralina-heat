@@ -83,11 +83,11 @@ export class Effects {
     const dist = dir.length();
     if (dist < 0.5) return;
     dir.normalize();
-    const len = Math.min(5, dist * 0.6);
+    const len = Math.min(3, dist * 0.4);
     const mid = from.clone().addScaledVector(dir, Math.min(dist - len / 2, dist * 0.45 + len / 2));
     if (!this.tracerGeo) {
-      this.tracerGeo = new THREE.CylinderGeometry(0.035, 0.012, 1, 6, 1, true);
-      this.tracerGlowGeo = new THREE.CylinderGeometry(0.12, 0.04, 1, 8, 1, true);
+      this.tracerGeo = new THREE.CylinderGeometry(0.012, 0.006, 1, 6, 1, true);
+      this.tracerGlowGeo = new THREE.CylinderGeometry(0.055, 0.018, 1, 8, 1, true);
     }
     const core = new THREE.Mesh(this.tracerGeo, new THREE.MeshBasicMaterial({ color: 0xfff0b0, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }));
     const glow = new THREE.Mesh(this.tracerGlowGeo, new THREE.MeshBasicMaterial({ color: 0xff8a20, transparent: true, opacity: 0.45, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }));

@@ -66,7 +66,7 @@ export class Combat {
     const start = aim.origin.clone().addScaledVector(aim.dir, g.cameraRig.dist * 0.9);
     const hit = this.traceShot(start, aim.dir, w.range, p.vehicle);
     const muzzle = p.body.muzzlePosition(new THREE.Vector3());
-    g.effects.muzzleFlash(muzzle, aim.dir, 2.2);
+    g.effects.muzzleFlash(muzzle, aim.dir, 1.2);
     g.effects.tracer(muzzle, hit.point);
     if (g.audio) g.audio.gunshot(w.id === 'smg' ? 0.7 : 1);
     g.cameraRig.shake(0.08);

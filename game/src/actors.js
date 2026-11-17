@@ -128,5 +128,6 @@ export class Actor {
 
   dispose() {
     this.game.scene.remove(this.body.root);
+    if (this.body.dispose) this.body.dispose();
   }
 }

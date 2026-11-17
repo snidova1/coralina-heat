@@ -3,6 +3,7 @@
 // painted with clear-coat, and driven by one arcade model: throttle, brakes, drift and grip,
 // crashes against buildings and other cars, damage, smoke, fire and explosions.
 import * as THREE from 'three';
+import { cloneModel, contactShadow } from './assets.js';
 import { decalTexture, glowTexture } from './textures.js';
 import { isLand, BEACH } from './map.js';
 import { pick, rand } from './rng.js';
@@ -91,6 +92,41 @@ function profileGeometry(points, depth, bevel) {
 
 function buildModel(typeName, color) {
   const T = VEHICLE_TYPES[typeName];
+  const assetName = { sports: 'car_sport', sedan: 'car_taxi', taxi: 'car_taxi', pickup: 'car_pickup', police: 'car_police' }[typeName];
+  const asset = cloneModel(assetName, T.len, 'z', typeName === 'pickup' ? 0 : Math.PI / 2);
+  if (asset) {
+    const root = new THREE.Group();
+    const body = new THREE.Group();
+    root.add(body);
+    const contact = contactShadow(T.wid * 1.25, T.len * 1.1);
+    contact.position.y = 0.055;
+    root.add(contact);
+    body.add(asset);
+    asset.position.y = 0.025;
+    let shell;
+    asset.traverse((o) => { if (o.isMesh && !shell) shell = o; });
+    const extras = { strobes: [] };
+    if (typeName === 'police') {
+      const height = new THREE.Box3().setFromObject(asset).max.y;
+      for (const side of [-1, 1]) {
+        const material = new THREE.MeshStandardMaterial({ color: side < 0 ? 0xff2040 : 0x2266ff, emissive: side < 0 ? 0xff2040 : 0x2266ff, emissiveIntensity: 4, toneMapped: false });
+        const lamp = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.08, 0.12), material);
+        lamp.position.set(side * 0.4, height - 0.035, -0.1);
+        const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(), color: material.color, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false }));
+        glow.position.copy(lamp.position);
+        glow.scale.setScalar(2.7);
+        body.add(lamp, glow);
+        extras.strobes.push({ lamp, glow, side });
+      }
+      const spill = new THREE.Mesh(new THREE.PlaneGeometry(7, 9), new THREE.MeshBasicMaterial({ map: glowTexture(), color: 0x2266ff, transparent: true, opacity: 0.28, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false }));
+      spill.rotation.x = -Math.PI / 2;
+      spill.position.y = 0.065;
+      root.add(spill);
+      extras.spill = spill;
+    }
+    root.userData.asset = assetName;
+    return { root, body, shell, wheels: [], extras, beams: [], paintMat: shell.material };
+  }
   const m = mats();
   const root = new THREE.Group();
   const body = new THREE.Group();
@@ -399,7 +435,11 @@ export class Vehicle {
     this.position.y = y;
     this.root.position.copy(this.position);
     this.root.rotation.set(0, this.heading, 0);
-    this.body.rotation.set(this.pitch, 0, this.roll);
+    // Wheels are authored into the GLB: keep chassis lean subtle so they stay on the road.
+    const pitch = this.root.userData.asset ? THREE.MathUtils.clamp(this.pitch, -0.008, 0.008) : this.pitch;
+    const roll = this.root.userData.asset ? THREE.MathUtils.clamp(this.roll, -0.018, 0.018) : this.roll;
+    this.body.rotation.set(pitch, 0, roll);
+    this.body.position.y = this.root.userData.asset ? Math.abs(Math.sin(pitch)) * this.spec.len / 2 + Math.abs(Math.sin(roll)) * this.spec.wid / 2 : 0;
     for (const w of this.wheels) {
       w.spin.rotation.x += (this.speed / this.spec.wheelR) * dt;
       if (w.front) w.pivot.rotation.y = -this.steer;
@@ -442,6 +482,19 @@ export class Vehicle {
 
   dispose() {
     this.game.scene.remove(this.root);
+    // Authored mesh geometry/materials and contact shadows belong to the shared asset cache.
+    // Only the per-cruiser lighting overlays are owned by this instance.
+    if (this.root.userData.asset) {
+      for (const { lamp, glow } of this.extras.strobes) {
+        lamp.geometry.dispose();
+        lamp.material.dispose();
+        glow.material.dispose();
+      }
+      if (this.extras.spill) {
+        this.extras.spill.geometry.dispose();
+        this.extras.spill.material.dispose();
+      }
+    }
   }
 }
 

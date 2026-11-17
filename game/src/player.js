@@ -1,4 +1,4 @@
-// Nico Reyes, the player: jogs and sprints on foot relative to the camera, aims and fires or
+// Rafa Reyes, the player: jogs and sprints on foot relative to the camera, aims and fires or
 // throws punches, steals any car with F (dragging the driver out), drives with WASD and the
 // handbrake, bails out of moving cars, and takes damage through body armour.
 import * as THREE from 'three';
