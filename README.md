@@ -25,6 +25,8 @@ Controls: WASD move/drive · mouse look/aim · left click fire/punch · right cl
 
 ## Verify and capture
 
+`node tools/verify-surfaces.mjs <absolute evidence directory>` renders desktop (1280×720), portrait (390×844), and short landscape (844×390) views. It checks menu/HUD bounds, actual mouse/touch settings interaction, scroll access to the last controls row, and both title and pause panels, then saves screenshots and observations.json. Responsive menus do not add touch gameplay: play still requires keyboard and mouse.
+
 `node tools/verify-assets.mjs` checks all four scenes, the 17-asset preload, independent skeletons, foot/car grounding, core gameplay mechanics, performance, and the all-assets-unavailable fallback in real Chrome. `node tools/smoke.mjs` exercises keyboard/mouse gameplay. Both close their browser and server on exit.
 
 `node tools/capture.mjs` regenerates the four deterministic 1280×720 JPEGs under 250 KiB each. Capture fails on scene timeouts, browser errors or oversized images. The local QA tools use the installed Chrome and puppeteer-core paths declared at the top of each script; the shipped game has no package dependencies.

@@ -97,3 +97,60 @@ kbd { background: #2a2440; border: 1px solid #5a4f80; border-radius: 3px; paddin
 .stats b { display: block; font: italic 900 26px "Arial Black", Impact, sans-serif; }
 .stats span { font: 13px "Trebuchet MS", sans-serif; color: #c9c0e0; letter-spacing: 1px; text-transform: uppercase; }
 .grade { position: fixed; inset: 0; pointer-events: none; z-index: 5; background: radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0) 55%, rgba(30,0,40,.38) 100%); mix-blend-mode: multiply; }
+
+.menu-panel { max-height: calc(100dvh - 430px); overflow: auto; }
+.pause .menu-panel { max-height: calc(100dvh - 230px); }
+.menu-panel label.check { justify-content: flex-start; }
+
+/* Keep the same menus usable in narrow windows and short landscape viewports.
+   The game still requires keyboard/mouse; these are responsive surfaces, not touch controls. */
+@media (max-width: 900px), (max-height: 600px) {
+  #menu { overflow: auto; overscroll-behavior: contain; }
+  .title-art { position: relative; inset: auto; margin: 24px 32px 0; max-width: calc(100% - 64px); }
+  .logo { width: fit-content; }
+  .logo .l1 { font-size: clamp(36px, 7vw, 64px); }
+  .logo .l2 { font-size: clamp(48px, 9vw, 80px); margin-left: 40px; letter-spacing: 6px; }
+  .tagline { font-size: 14px; line-height: 1.5; letter-spacing: 1px; margin-left: 0; max-width: 550px; }
+  .menu-list, .pause .menu-list { position: relative; inset: auto; margin: 28px 32px; width: min(330px, calc(100% - 64px)); }
+  .menu-list button { font-size: 23px; min-height: 44px; }
+  .menu-foot { position: relative; inset: auto; margin: 24px 32px; font-size: 12px; line-height: 1.5; }
+  .menu-panel, .pause .menu-panel { position: relative; inset: auto; margin: 20px 32px 32px; min-width: 0; width: min(440px, calc(100% - 64px)); max-height: none; overflow: visible; box-sizing: border-box; padding: 14px 16px; }
+  .menu-panel label { gap: 8px; font-size: 14px; }
+  .menu-panel input[type="range"] { min-width: 0; width: 115px; }
+  .menu-panel td { padding-right: 6px; font-size: 13px; }
+  .menu-panel kbd { font-size: 11px; white-space: nowrap; }
+  .pause-head { position: relative; inset: auto; margin: 24px 32px; }
+  .pause-head b { font-size: 42px; }
+  .pause-head span { font-size: 14px; }
+  .stats { position: relative; inset: auto; margin: 24px 32px; grid-template-columns: repeat(2, minmax(0, 170px)); }
+  #loading b { font-size: clamp(26px, 7vw, 56px); }
+  #loading progress { width: min(320px, 80vw); }
+  #loading span { font-size: 10px; letter-spacing: 1px; }
+  .hud-topright { top: 12px; right: 12px; transform: scale(.7); transform-origin: top right; }
+  .hud-objective { top: 12px; left: 12px; max-width: min(350px, 42vw); padding: 8px 10px; }
+  .obj-title { font-size: 12px; letter-spacing: 2px; }
+  .obj-text { font-size: 14px; }
+  .hud-radar { left: 12px; bottom: 16px; width: 130px; }
+  .hud-radar canvas { width: 130px; height: 130px; }
+  .hud-subtitle { left: 160px; right: 150px; bottom: 16px; transform: none; font-size: 14px; padding: 6px 10px; }
+  .hud-speedo { right: 12px; bottom: 16px; transform: scale(.7); transform-origin: bottom right; }
+  .hud-district, .hud-vehicle { right: 12px; bottom: 110px; font-size: 22px; }
+  .hud-vehicle { bottom: 145px; font-size: 19px; }
+  .hud-toast, .hud-hint { left: 12px; max-width: calc(100% - 52px); font-size: 14px; }
+  .hud-hint { bottom: 185px; }
+  .hud-banner b { font-size: 48px; }
+  .hud-banner span { font-size: 22px; }
+  .hud-mission-title { font-size: 34px; }
+}
+@media (max-width: 500px) {
+  .hud-objective { top: 115px; right: 12px; max-width: none; }
+  .hud-subtitle { left: 12px; right: 12px; bottom: 185px; font-size: 16px; }
+  .hud-toast { top: 210px; }
+}
+@media (min-width: 600px) and (max-height: 600px) {
+  .title-art { width: calc(50% - 64px); }
+  .menu-list, .pause .menu-list { position: absolute; left: 52%; top: 24px; margin: 0; width: calc(48% - 32px); }
+  .menu-foot { max-width: calc(50% - 64px); }
+  .pause-head { width: calc(50% - 64px); }
+  .stats { margin-top: 160px; }
+}

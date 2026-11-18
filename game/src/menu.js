@@ -95,6 +95,8 @@ export class Menu {
     const p = this.root.querySelector('.menu-panel');
     p.innerHTML = html;
     p.classList.add('on');
+    // Both title and pause panels share the compact layout and scroll container.
+    if (matchMedia('(max-width: 900px), (max-height: 600px)').matches) p.scrollIntoView({ block: 'nearest' });
     return p;
   }
 
