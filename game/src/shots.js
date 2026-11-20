@@ -1,5 +1,7 @@
 // Deterministic in-engine compositions for the four judging screenshots.
 import { Actor } from './actors.js';
+import { Helicopter } from './police.js';
+import { districtAt } from './map.js';
 import { MISSIONS, CAST } from './story.js';
 import { goldenHour, dressDrift, dressMarina, lightOceanDrive, coastBackdrop, openDriverDoor, targetBadge } from './shot-art.js';
 
@@ -27,12 +29,12 @@ function startMission(game, index, step) {
   m.advance();
 }
 
-function walker(game, x, z, heading) {
+function walker(game, x, z, heading, speed = 2) {
   const a = new Actor(game, 'civilian', x, z);
   a.heading = heading;
   a.body.root.position.copy(a.position);
   a.body.root.rotation.y = heading;
-  a.body.speed = 2;
+  a.body.speed = speed;
   a.body.update(0.28);
   game.pedestrians.list.push(a);
   return a;
@@ -49,6 +51,7 @@ const SCENES = {
     hero.vz = -39;
     hero.speed = 39;
     hero.skid = 1;
+    hero.body.rotation.z = 0.055;
     p.updateDriving(0);
     startMission(game, 3, 3);
     game.wanted.setLevel(4);
@@ -59,11 +62,15 @@ const SCENES = {
     });
     game.vehicles.spawn('taxi', 365.6, -125.8, 0);
     game.vehicles.spawn('pickup', 365, -94, 0);
-    for (const z of [-138, -128, -111, -95, -82]) walker(game, 370, z, z < -120 ? 0 : Math.PI);
+    for (const [x,z,yaw,speed] of [[370,-138,0,2],[369.5,-128,1.8,5.8],[371,-126,1.2,5.2],[370,-111,.88,5.2],[372,-97,3.14,2],[370,-84,2.8,2]]) walker(game, x, z, yaw, speed);
+    const heli = game.police.heli = new Helicopter(game);
+    heli.pos.set(414, 21.5, -91);
+    heli.update(0, true);
+    heli.rotor.rotation.y = .46;
     dressDrift(game, hero, cops);
     coastBackdrop(game);
     game.hud.showVehicleName(hero.label);
-    camera(game, [348.9, 2.35, -117.0, 365, 1.55, -113.1], 51);
+    camera(game, [349, 1.94, -118.2, 364.5, 1.91, -113.0], 53);
   },
 
   street(game) {
@@ -74,25 +81,27 @@ const SCENES = {
     openDriverDoor(game, car);
     const p = game.player;
     p.current = 'fists';
-    p.position.set(46.34, 0, -128.02);
-    p.heading = -1.95;
+    p.position.set(46.57, 0, -127.78);
+    p.heading = -2.08;
     p.body.root.position.copy(p.position);
     p.body.root.rotation.y = p.heading;
-    p.body.reach = [[-0.10, 1.02, 0.62], [0.28, 0.80, 0.47]];
+    p.body.reach = [[-.08, 1.19, .67], [.19, .90, .33]];
+    p.body.lean = .15;
+    p.body.bank = -.13;
     p.body.speed = 3.2;
     p.body.update(0.37);
-    if (p.body.model) p.body.model.rotation.x = -0.13;
-    const driver = walker(game, 45.44, -128.67, 1.05);
-    driver.body.reach = [[-0.13, 1.12, 0.70], [0.54, 1.31, 0.07]];
-    driver.body.update(0.29);
-    if (driver.body.model) driver.body.model.rotation.x = 0.35;
+    const driver = walker(game, 45.72, -128.46, 0.83, 4.15);
+    driver.body.reach = [[-.49, 1.52, .25], [.24, 1.47, .52]];
+    driver.body.lean = -.32;
+    driver.body.bank = .17;
+    driver.body.update(0.26);
     for (const [x, z, yaw] of [[49, -139, 0], [51, -150, 0.25], [31, -141, -0.15], [33, -151, 0], [48, -171, 0.3], [53, -122, -1.1], [30, -134, 0.8]]) walker(game, x, z, yaw);
     game.vehicles.spawn('taxi', 36.5, -146, 0.1);
     game.vehicles.spawn('pickup', 43.8, -168, Math.PI);
     game.vehicles.spawn('sedan', 36.4, -184, 0);
     game.hud.setObjective('Hot Wheels', 'Steal Ocho’s ~Vortice GT~.');
-    game.hud.subtitle(CAST.vera.name, CAST.vera.color, MISSIONS[3].steps[0].lines[0][1], 4);
-    camera(game, [48.1, 2.12, -124.6, 44.9, 1.25, -129.15], 52);
+    game.hud.subtitle(CAST.vera.name, CAST.vera.color, 'That’s the Vortice. Get him out of it.', 4);
+    camera(game, [48.72, 1.75, -124.96, 44.75, 1.37, -129.55], 49);
   },
 
   mission(game) {
@@ -100,7 +109,7 @@ const SCENES = {
     dressMarina(game);
     game.stats.cash = 71400;
     const p = game.player;
-    p.position.set(143.4, 0.16, 386.4);
+    p.position.set(143.75, 0.16, 386.37);
     p.heading = Math.PI / 2;
     p.giveWeapon('pistol', 72);
     p.current = 'pistol';
@@ -110,30 +119,36 @@ const SCENES = {
     p.body.root.position.copy(p.position);
     p.body.root.rotation.y = p.heading;
     p.body.pose = 'aim';
+    p.body.lean = .13;
     p.body.setArmed(true);
     p.body.update(0);
     startMission(game, 5, 3);
     const enemies = game.missions.enemies;
-    const positions = [[157, 385.5], [152, 383.6], [150, 388.4], [156, 389.4], [163, 381.5], [167, 389.5]];
+    const positions = [[155.4, 385.85], [153.3, 382.9], [150.1, 389.52], [156.8, 389.2], [163, 381.5], [164.5, 385.2]];
     enemies.forEach((e, i) => {
       e.position.set(positions[i][0], 0.16, positions[i][1]);
       e.heading = Math.atan2(p.position.x - e.position.x, p.position.z - e.position.z);
       e.body.root.position.copy(e.position);
       e.body.root.rotation.y = e.heading;
       e.body.pose = 'aim';
+      e.body.lean = i === 1 ? .22 : .07;
+      e.body.bank = i === 2 ? .21 : 0;
+      if (i === 3 || i === 5) { e.body.pose = 'move'; e.body.speed = 5.6; e.body.root.rotation.y += i === 3 ? -1.02 : .78; }
       e.body.setArmed(true);
       if (i === 4) e.damage(500, 'player');
-      e.body.update(i === 4 ? 0.5 : 0);
+      e.body.update(i === 4 ? 0.5 : i === 3 || i === 5 ? .27 : 0);
     });
-    camera(game, [141.31, 2.06, 385.05, 156.3, 1.58, 387.25], 51);
+    camera(game, [141.82, 1.99, 385.48, 155.0, 1.50, 386.17], 47);
     game.combat.playerShoot();
     for (const e of [enemies[1], enemies[2]]) game.combat.npcShoot(e, 0, 0);
-    for (const p of game.effects.active) if (p.kind === 'flash') p.size *= 0.63;
+    game.effects.updateCasings(.078);
+    for (const p of game.effects.active) if (p.kind === 'flash') p.size *= p.s.position.x < 147 ? 1.1 : .68;
     for (const { line } of game.effects.tracers) line.scale.multiplyScalar(0.65);
     game.effects.update(0.001);
     targetBadge(game, enemies[0], 'SAINT OCHO');
     game.hud.subtitle(CAST.ocho.name, CAST.ocho.color, 'You came back for THIS? Coralina eats boys like you!', 4);
     game.missions.update(0);
+    game.player.ammoState.clip--;
     // The named badge already includes an arrow; retain the stock markers on the other targets.
     enemies[0].tag.visible = false;
   },
@@ -154,6 +169,7 @@ export async function runShot(game, name) {
   const scene = Object.hasOwn(SCENES, name) ? SCENES[name] : SCENES.title;
   scene(game);
   if (scene !== SCENES.title) {
+    game.districtName = districtAt(game.player.position.x, game.player.position.z);
     game.hud.show(true);
     game.hud.update(1 / 60);
     game.minimap.update();

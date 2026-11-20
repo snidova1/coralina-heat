@@ -133,10 +133,12 @@ export function createCharacter(look) {
   root.add(contactShadow(0.85, 0.65));
   root.scale.setScalar(look.height);
   const ownedMaterials = [];
-  if (kind === 'civilian' || kind === 'contact') model.traverse((o) => {
+  if (kind === 'civilian' || kind === 'contact' || kind === 'thug' || kind === 'boss') model.traverse((o) => {
     if (!o.isMesh) return;
     o.material = o.material.clone();
-    o.material.color.offsetHSL((look.shirt % 101) / 101 * 0.3 - 0.15, -0.06, 0.025);
+    const tone = new THREE.Color(look.shirt);
+    o.material.color.lerp(tone, kind === 'boss' ? 0.05 : 0.27);
+    o.material.roughness = Math.max(o.material.roughness, 0.72);
     ownedMaterials.push(o.material);
   });
   const mixer = new THREE.AnimationMixer(model);
@@ -196,9 +198,10 @@ export function createCharacter(look) {
       if (active === actions.run) active.timeScale = Math.max(0.75, this.speed / 5.5);
       mixer.update(dt);
       this.recoil = Math.max(0, this.recoil - dt * 8);
-      model.rotation.x = 0;
+      model.rotation.x = this.lean || 0;
+      model.rotation.z = this.bank || 0;
       // The supplied walk/run clips place the sole ~3 cm above the bind-pose floor.
-      model.position.y = -0.03;
+      model.position.y = -0.03 - (this.duck || 0);
       if (this.pose === 'dead') {
         this.deadT = Math.min(1, this.deadT + dt * 2.4);
         model.rotation.x = -this.deadT * Math.PI / 2;

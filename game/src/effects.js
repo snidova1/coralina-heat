@@ -35,6 +35,8 @@ export class Effects {
     this.flashT = 0;
     this.tracers = [];
     this.markers = [];
+    this.casings = [];
+    this.casingCursor = 0;
   }
 
   emit(kind, x, y, z, vx = 0, vy = 0, vz = 0, scale = 1) {
@@ -67,7 +69,42 @@ export class Effects {
     this.emit('flash', pos.x, pos.y, pos.z, 0, 0, 0, scale);
     this.emit('flash', pos.x + dir.x * 0.18, pos.y + dir.y * 0.18, pos.z + dir.z * 0.18, 0, 0, 0, 0.55);
     for (let i = 0; i < 3; i++) this.emit('spark', pos.x, pos.y, pos.z, dir.x * 8 + (rand() - 0.5) * 3, dir.y * 8 + rand() * 2, dir.z * 8 + (rand() - 0.5) * 3, 0.25);
-    this.lightAt(pos, 0xffc070, 30, 0.07);
+    this.lightAt(pos, 0xffc070, 8 * scale, 0.055);
+    this.ejectCasing(pos, dir);
+  }
+
+  ejectCasing(pos, dir) {
+    if (!this.brass) {
+      this.brass = new THREE.MeshStandardMaterial({ color: 0xcead5e, roughness: .28, metalness: .67 });
+      this.caseGeo = new THREE.CylinderGeometry(.015, .014, .046, 8);
+    }
+    const i = this.casingCursor++ % 36;
+    if (!this.casings[i]) {
+      const mesh = new THREE.Mesh(this.caseGeo, this.brass);
+      this.scene.add(mesh);
+      this.casings[i] = { mesh, v: new THREE.Vector3(), age: -1 };
+    }
+    const c = this.casings[i];
+    c.mesh.position.copy(pos).addScaledVector(dir, -.21);
+    c.mesh.rotation.set(.4, .2, -1.1);
+    c.v.set(-dir.z * 2.9 - dir.x, 2.25, dir.x * 2.9 - dir.z);
+    c.age = 0;
+    c.mesh.visible = true;
+  }
+
+  updateCasings(dt) {
+    for (const c of this.casings) {
+      if (c.age < 0) continue;
+      c.age += dt;
+      if (c.age > 5) { c.mesh.visible = false; c.age = -1; continue; }
+      const p = c.mesh.position;
+      if (p.y <= .19 && c.v.lengthSq() < .09) continue;
+      c.v.y -= 9.8 * dt;
+      p.addScaledVector(c.v, dt);
+      c.mesh.rotation.x += dt * 21;
+      c.mesh.rotation.z += dt * 9;
+      if (p.y < .19) { p.y = .19; c.v.x *= .35; c.v.z *= .35; c.v.y *= -.31; }
+    }
   }
 
   lightAt(pos, color, intensity, time) {
@@ -167,6 +204,7 @@ export class Effects {
   }
 
   update(dt) {
+    this.updateCasings(dt);
     for (let i = this.active.length - 1; i >= 0; i--) {
       const p = this.active[i];
       p.age += dt;

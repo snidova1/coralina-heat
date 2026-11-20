@@ -12,28 +12,34 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #120c1c; fon
 #hud em { font-style: normal; color: #ffd23f; }
 .hud-topright { position: absolute; top: 22px; right: 30px; text-align: right; }
 .hud-weapon { display: flex; align-items: center; justify-content: flex-end; gap: 10px; height: 40px; }
+.hud-weapon[hidden] { display: none; }
 .w-icon { width: 78px; height: 40px; color: #f4f4f4; filter: drop-shadow(0 2px 0 #000) drop-shadow(0 0 2px #000); }
 .w-icon svg { width: 100%; height: 100%; }
 .w-ammo { font: italic 900 30px "Arial Black", Impact, sans-serif; text-shadow: var(--ink); min-width: 70px; }
 .w-ammo small { font-size: 18px; color: #d8d8d8; }
-.hud-cash { font: italic 900 42px "Arial Black", Impact, sans-serif; color: #8cf5a0; letter-spacing: 1px; text-shadow: 0 3px 0 #0b3a1a, 0 0 4px #000, 2px 2px 0 #000; margin-top: 2px; }
+.hud-cash { font: 800 31px "Segoe UI", sans-serif; color: #b9efb8; font-variant-numeric: tabular-nums; letter-spacing: .025em; text-shadow: 0 2px 4px #0a1813, 0 2px 9px #000; margin-top: 2px; }
 .hud-stars { display: flex; justify-content: flex-end; gap: 4px; margin-top: 4px; }
-.hud-stars svg { width: 34px; height: 34px; fill: rgba(255,255,255,0.12); stroke: rgba(0,0,0,0.6); stroke-width: 1.4; }
+.hud-stars svg { width: 30px; height: 30px; fill: rgba(17,20,33,.24); stroke: rgba(252,234,219,.65); stroke-width: 1.1; }
+.hud-stars:not(.active) { opacity: .42; }
 .hud-stars svg.lit { fill: #ffd23f; stroke: #2a1a00; filter: drop-shadow(0 0 6px rgba(255,190,40,.7)); }
 .hud-stars svg.dim { fill: rgba(255,210,63,.35); }
 .hud-stars.pulse { animation: starpulse .6s ease-out 2; }
 @keyframes starpulse { 50% { transform: scale(1.18); } }
 .hud-objective { position: absolute; top: 22px; left: 28px; max-width: 470px; background: linear-gradient(90deg, rgba(10,12,24,.78), rgba(10,12,24,.2)); border-left: 4px solid #ffd23f; padding: 10px 16px 12px; }
-.obj-title { font: italic 900 15px "Arial Black", Impact, sans-serif; letter-spacing: 3px; text-transform: uppercase; color: #ff9d5c; }
-.obj-text { font: 600 19px "Trebuchet MS", sans-serif; text-shadow: 0 1px 2px #000; margin-top: 3px; line-height: 1.3; }
+.obj-title { font: 900 15px "Segoe UI", sans-serif; letter-spacing: .15em; text-transform: uppercase; color: #ffc589; }
+.obj-text { font: 650 19px "Segoe UI", sans-serif; text-shadow: 0 1px 2px #000; margin-top: 3px; line-height: 1.3; }
 .obj-timer { font: italic 900 26px "Arial Black", Impact, sans-serif; color: #fff; text-shadow: var(--ink); }
 .hud-toast, .hud-hint { position: absolute; top: 150px; left: 28px; max-width: 380px; background: rgba(10,12,24,.82); padding: 10px 14px; font: 600 16px "Trebuchet MS", sans-serif; border-radius: 3px; opacity: 0; transition: opacity .25s; }
 .hud-hint { top: auto; bottom: 330px; }
 .hud-toast.on, .hud-hint.on { opacity: 1; }
 .hud-radar { position: absolute; left: 34px; bottom: 30px; width: 230px; }
 .hud-radar canvas { width: 230px; height: 230px; display: block; filter: drop-shadow(0 4px 8px rgba(0,0,0,.6)); }
-.hud-bars { display: flex; gap: 6px; margin-top: 8px; padding: 0 14px; }
-.bar { flex: 1; height: 9px; background: rgba(0,0,0,.55); border: 1px solid rgba(0,0,0,.8); }
+.hud-bars { display: flex; gap: 8px; margin-top: 4px; }
+.vital { display: flex; align-items: center; flex: 1; gap: 4px; font: 800 9px "Segoe UI", sans-serif; text-shadow: 0 1px 3px #000; }
+.bar { flex: 1; height: 5px; background: rgba(10,12,18,.72); border: 1px solid #151721; }
+.radar-caption { font: 650 9px "Segoe UI", sans-serif; text-align: center; text-transform: uppercase; letter-spacing: .08em; margin-top: 5px; color: #fff0dc; text-shadow: 0 1px 3px #000, 0 1px 2px #000; }
+.radar-caption span { color: #ffd188; }
+.radar-caption b { font-weight: 750; }
 .bar i { display: block; height: 100%; }
 .bar.health i { background: linear-gradient(#7ff58a, #2fae4a); }
 .bar.armor i { background: linear-gradient(#8fd0ff, #2f7fd0); }

@@ -8,6 +8,7 @@ import { facadeTextures, surfaceTexture, waterNormals, neonSignTexture, decalTex
 import { makeStream } from './rng.js';
 import { dressBeachSand } from './surface-detail.js';
 import { Architecture } from './architecture.js';
+import { buildMarinaCover } from './marina-cover.js';
 import {
   LINES, LINE_MIN, LINE_MAX, ROAD_HALF, ISLAND, BEACH, CANAL, BRIDGE, BOULEVARD_X, SEA_LEVEL, PLACES,
 } from './map.js';
@@ -52,6 +53,7 @@ export class City {
     this.buildCanalBridges();
     this.buildBeach();
     this.buildMarina();
+    buildMarinaCover(this);
     this.buildSunspanBridge();
     this.buildMainland();
     this.buildStreetFurniture();

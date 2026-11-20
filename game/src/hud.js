@@ -25,7 +25,8 @@ export class Hud {
         <div class="hud-stars">${STAR.repeat(5)}</div>
       </div>
       <div class="hud-radar"><canvas width="230" height="230"></canvas>
-        <div class="hud-bars"><div class="bar health"><i></i></div><div class="bar armor"><i></i></div></div>
+        <div class="hud-bars"><div class="vital"><b>HP</b><div class="bar health"><i></i></div></div><div class="vital"><b>AR</b><div class="bar armor"><i></i></div></div></div>
+        <div class="radar-caption">CORALINA BAY <span>·</span> <b></b></div>
       </div>
       <div class="hud-subtitle"></div>
       <div class="hud-banner"><b></b><span></span></div>
@@ -41,7 +42,7 @@ export class Hud {
     this.el = {
       objTitle: q('.obj-title'), objText: q('.obj-text'), objTimer: q('.obj-timer'), objective: q('.hud-objective'),
       toast: q('.hud-toast'), weaponIcon: q('.w-icon'), ammo: q('.w-ammo'), cash: q('.hud-cash'), stars: q('.hud-stars'),
-      radar: q('.hud-radar canvas'), health: q('.bar.health i'), armor: q('.bar.armor i'), subtitle: q('.hud-subtitle'),
+      radar: q('.hud-radar canvas'), zone: q('.radar-caption b'), health: q('.bar.health i'), armor: q('.bar.armor i'), subtitle: q('.hud-subtitle'),
       banner: q('.hud-banner'), bannerTitle: q('.hud-banner b'), bannerSub: q('.hud-banner span'), missionTitle: q('.hud-mission-title'),
       district: q('.hud-district'), vehicle: q('.hud-vehicle'), speedo: q('.hud-speedo'), speed: q('.hud-speedo b'), radio: q('.hud-speedo .radio'),
       crosshair: q('.hud-crosshair'), hit: q('.hud-hit'), damage: q('.hud-damage'), hint: q('.hud-hint'),
@@ -154,6 +155,9 @@ export class Hud {
     // weapon
     const wid = p.current;
     if (this.last.weapon !== wid) { this.el.weaponIcon.innerHTML = ICONS[wid]; this.last.weapon = wid; }
+    this.el.weaponIcon.parentElement.hidden = !!p.vehicle || wid === 'fists';
+    const zone = g.districtName || this.lastDistrict;
+    if (zone && this.last.zone !== zone) { this.el.zone.textContent = zone; this.last.zone = zone; }
     const s = p.ammoState;
     const ammoText = p.weapon.melee ? '' : p.reloadT > 0 ? 'RELOAD' : `${s.clip}<small>/${s.ammo}</small>`;
     if (this.last.ammo !== ammoText) { this.el.ammo.innerHTML = ammoText; this.last.ammo = ammoText; }

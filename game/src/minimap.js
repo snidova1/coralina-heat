@@ -15,14 +15,14 @@ function buildMapImage(city) {
   const d = c.getContext('2d');
   const X = (x) => x - X0;
   const Z = (z) => z - Z0;
-  d.fillStyle = '#1c5a78';
+  d.fillStyle = '#17384a';
   d.fillRect(0, 0, W, H);
-  d.fillStyle = '#4d5865';
+  d.fillStyle = '#4b4b53';
   d.fillRect(X(ISLAND.minX), Z(ISLAND.minZ), BEACH.x0 - ISLAND.minX, ISLAND.maxZ - ISLAND.minZ);
-  d.fillStyle = '#d6bf8a';
+  d.fillStyle = '#967f68';
   d.fillRect(X(BEACH.x0), Z(ISLAND.minZ), BEACH.x1 - BEACH.x0 - 8, ISLAND.maxZ - ISLAND.minZ);
   // the canal
-  d.fillStyle = '#1c5a78';
+  d.fillStyle = '#17384a';
   d.fillRect(X(ISLAND.minX - 5), Z(CANAL.zMin), BEACH.x1 + 20 - ISLAND.minX, CANAL.zMax - CANAL.zMin);
   // buildings
   d.fillStyle = '#353e49';
@@ -35,7 +35,7 @@ function buildMapImage(city) {
   d.fillStyle = '#4f7f45';
   d.fillRect(X(LINES[pk.block[0]] + 11), Z(LINES[pk.block[1]] + 11), 58, 58);
   // streets
-  d.fillStyle = '#c4ccd2';
+  d.fillStyle = '#aaa7a2';
   const lo = LINES[0] - ROAD_HALF;
   const len = LINES[LINES.length - 1] - LINES[0] + ROAD_HALF * 2;
   for (const L of LINES) {
