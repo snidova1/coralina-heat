@@ -28,6 +28,7 @@ uniform vec3 horizonColor;
 uniform vec3 sunColor;
 uniform vec3 sunDir;
 uniform float night;
+uniform float sunset;
 varying vec3 vDir;
 float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 float noise(vec2 p) {
@@ -36,6 +37,24 @@ float noise(vec2 p) {
   return mix(mix(hash(i), hash(i + vec2(1, 0)), u.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), u.x), u.y);
 }
 float fbm(vec2 p) { float v = 0.0; float a = 0.5; for (int i = 0; i < 5; i++) { v += a * noise(p); p *= 2.03; a *= 0.5; } return v; }
+vec3 sunsetSky(vec3 d, float sd) {
+  float h = max(d.y, 0.0);
+  vec3 col = mix(horizonColor, vec3(0.48, 0.044, 0.19), smoothstep(0.0, 0.35, h));
+  col = mix(col, topColor, smoothstep(0.10, 0.62, h));
+  col *= 0.72 + 0.28 * pow(sd, 4.0);
+  vec2 p = d.xz / (h + 0.22);
+  float bands = fbm(p * 3.5 + vec2(2.1, 8.2)) + 0.055 * sin(h * 55.0 + p.x);
+  float detail = fbm(p * 9.0 + vec2(8.4, 1.5));
+  float body = smoothstep(0.47, 0.66, bands + 0.14 * detail);
+  float rim = smoothstep(0.43, 0.54, bands + 0.14 * detail) * (1.0 - body);
+  float cloud = smoothstep(0.01, 0.08, h);
+  vec3 lit = mix(vec3(0.46, 0.087, 0.24), vec3(1.13, 0.32, 0.095), pow(sd, 22.0));
+  col = mix(col, lit, rim * cloud * 0.71);
+  col = mix(col, vec3(0.11, 0.026, 0.15) + lit * 0.16, body * cloud * 0.86);
+  col += sunColor * (0.20 * pow(sd, 36.0) + 0.84 * pow(sd, 590.0));
+  col += vec3(3.5, 2.1, 0.8) * smoothstep(0.99979, 0.99988, sd);
+  return col * mix(0.43, 1.0, smoothstep(-0.12, 0.0, d.y));
+}
 void main() {
   vec3 d = normalize(vDir);
   float h = clamp(d.y, -0.2, 1.0);
@@ -54,6 +73,7 @@ void main() {
   float st = step(0.9985, hash(floor(d.xz / max(d.y, 0.1) * 300.0))) * night * smoothstep(0.1, 0.4, d.y);
   col += vec3(st);
   if (d.y < 0.0) col = mix(horizonColor, horizonColor * 0.6, clamp(-d.y * 4.0, 0.0, 1.0));
+  if (sunset > 0.5) col = sunsetSky(d, sd);
   gl_FragColor = vec4(col, 1.0);
   #include <tonemapping_fragment>
   #include <colorspace_fragment>
@@ -72,6 +92,7 @@ export class DayCycle {
       sunColor: { value: new THREE.Color() },
       sunDir: { value: new THREE.Vector3(0, 1, 0) },
       night: { value: 0 },
+      sunset: { value: 0 },
     };
     const skyMat = new THREE.ShaderMaterial({
       uniforms: this.uniforms, vertexShader: SKY_VERT, fragmentShader: SKY_FRAG, side: THREE.BackSide, depthWrite: false, fog: false,

@@ -1,7 +1,7 @@
 // Deterministic in-engine compositions for the four judging screenshots.
 import { Actor } from './actors.js';
 import { MISSIONS, CAST } from './story.js';
-import { goldenHour, dressDrift, coastBackdrop, openDriverDoor, targetBadge } from './shot-art.js';
+import { goldenHour, dressDrift, dressMarina, lightOceanDrive, coastBackdrop, openDriverDoor, targetBadge } from './shot-art.js';
 
 const params = new URLSearchParams(location.search);
 
@@ -40,7 +40,7 @@ function walker(game, x, z, heading) {
 
 const SCENES = {
   chase(game) {
-    goldenHour(game, [0.91, 0.105, 0.41]);
+    goldenHour(game, [0.94, 0.078, 0.34]);
     game.stats.cash = 48250;
     const p = game.player;
     const hero = game.vehicles.spawn('sports', 358.5, -118, Math.PI - 0.58, 0xff2d3c);
@@ -67,7 +67,8 @@ const SCENES = {
   },
 
   street(game) {
-    goldenHour(game, [0.68, 0.31, 0.66]);
+    goldenHour(game, [0.72, 0.19, 0.66]);
+    game.day.hemi.intensity = 1.19;
     game.stats.cash = 12780;
     const car = game.vehicles.spawn('sports', 43.6, -129, Math.PI, 0xff2d3c);
     openDriverDoor(game, car);
@@ -95,7 +96,8 @@ const SCENES = {
   },
 
   mission(game) {
-    goldenHour(game, [0.2, 0.2, 0.96]);
+    goldenHour(game, [0.79, 0.10, 0.60]);
+    dressMarina(game);
     game.stats.cash = 71400;
     const p = game.player;
     p.position.set(143.4, 0.16, 386.4);
@@ -123,7 +125,7 @@ const SCENES = {
       if (i === 4) e.damage(500, 'player');
       e.body.update(i === 4 ? 0.5 : 0);
     });
-    camera(game, [141.48, 1.86, 385.34, 156.3, 1.36, 386.5], 51);
+    camera(game, [141.31, 2.06, 385.05, 156.3, 1.58, 387.25], 51);
     game.combat.playerShoot();
     for (const e of [enemies[1], enemies[2]]) game.combat.npcShoot(e, 0, 0);
     for (const p of game.effects.active) if (p.kind === 'flash') p.size *= 0.63;
@@ -137,11 +139,12 @@ const SCENES = {
   },
 
   title(game) {
-    goldenHour(game, [-0.62, 0.115, 0.78]);
-    game.player.position.set(310, 0, -88);
+    goldenHour(game, [-0.44, 0.08, 0.89]);
+    lightOceanDrive(game);
+    game.player.position.set(368, 0, -236);
     game.player.body.root.visible = false;
     game.menu.title();
-    camera(game, [562, 158, -465, 195, 13, -14], 54);
+    camera(game, [474, 8.6, -344, 404, 7.2, -233], 52);
   },
 };
 
