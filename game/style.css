@@ -40,6 +40,8 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #120c1c; fon
 .radar-caption { font: 650 9px "Segoe UI", sans-serif; text-align: center; text-transform: uppercase; letter-spacing: .08em; margin-top: 5px; color: #fff0dc; text-shadow: 0 1px 3px #000, 0 1px 2px #000; }
 .radar-caption span { color: #ffd188; }
 .radar-caption b { font-weight: 750; }
+.hud-interact { position: absolute; left: 50%; transform: translateX(-50%); bottom: 143px; color: #f9e7d2; background: #171d2aeb; border: 1px solid #577774; padding: 8px 14px; font: 650 15px "Segoe UI", sans-serif; }
+.hud-interact kbd { margin-right: 9px; }
 .bar i { display: block; height: 100%; }
 .bar.health i { background: linear-gradient(#7ff58a, #2fae4a); }
 .bar.armor i { background: linear-gradient(#8fd0ff, #2f7fd0); }
@@ -78,8 +80,8 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #120c1c; fon
 #menu.pause { background: rgba(12,10,26,.72); backdrop-filter: blur(3px); }
 .title-art { position: absolute; left: 64px; top: 48px; }
 .logo { display: flex; flex-direction: column; line-height: .86; transform: skewX(-8deg); }
-.logo .l1 { font: italic 900 78px "Arial Black", Impact, sans-serif; letter-spacing: 2px; background: linear-gradient(180deg, #fff6c9 0%, #ffcf5a 38%, #ff7a3d 62%, #ff3d7f 100%); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 6px 0 #3a0c3f) drop-shadow(0 0 22px rgba(255,90,140,.55)); }
-.logo .l2 { font: italic 900 104px "Arial Black", Impact, sans-serif; letter-spacing: 10px; margin-left: 96px; color: #3ff2e4; -webkit-text-stroke: 3px #10203f; filter: drop-shadow(0 6px 0 #10203f) drop-shadow(0 0 24px rgba(60,240,230,.6)); }
+.logo .l1 { font: italic 900 78px "Arial Black", Impact, sans-serif; letter-spacing: -.035em; background: linear-gradient(180deg, #fff6c9 0%, #ffcf5a 38%, #ff7a3d 74%, #ff5477 100%); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 4px 0 #4b1a43) drop-shadow(0 0 16px rgba(255,90,140,.35)); }
+.logo .l2 { font: italic 900 104px "Arial Black", Impact, sans-serif; letter-spacing: .025em; margin-left: 60px; color: #75f5e2; -webkit-text-stroke: 2px #18314b; filter: drop-shadow(0 4px 0 #10203f) drop-shadow(0 0 16px rgba(60,240,230,.42)); }
 .tagline { margin-top: 14px; margin-left: 8px; font: 600 20px "Trebuchet MS", sans-serif; letter-spacing: 2px; color: #ffe2c4; text-shadow: 0 2px 4px #000; }
 .menu-list { position: absolute; left: 72px; top: 372px; display: flex; flex-direction: column; gap: 6px; width: 330px; }
 .pause .menu-list { top: 170px; }
@@ -120,6 +122,29 @@ kbd { background: #2a2440; border: 1px solid #5a4f80; border-radius: 3px; paddin
 .menu-panel { max-height: calc(100dvh - 430px); overflow: auto; }
 .pause .menu-panel { max-height: calc(100dvh - 230px); }
 .menu-panel label.check { justify-content: flex-start; }
+
+.service-panel, .city-atlas { position: fixed; z-index: 22; color: #f8ecde; font: 500 15px "Segoe UI", sans-serif; }
+.service-panel[hidden], .city-atlas[hidden] { display: none; }
+.service-panel { top: 12%; right: 4%; width: min(360px,85vw); max-height: 80vh; overflow: auto; padding: 22px; box-sizing: border-box; background: #111923ed; border-top: 3px solid #76dec1; box-shadow: 0 20px 65px #061018ad; }
+.service-panel header, .city-atlas header { color: #89e4cb; text-transform: uppercase; letter-spacing: .16em; font-size: 11px; font-weight: 750; }
+.service-panel h2, .city-atlas h2 { margin: .3em 0 .15em; font-size: 40px; line-height: 1; }
+.service-panel p, .city-atlas p { color: #c3bdbe; }
+.service-panel button, .city-atlas button { display: block; width: 100%; margin: 5px 0; padding: 10px 12px; font: inherit; font-weight: 650; color: inherit; background: #26323d; border: 1px solid #3a4b52; text-align: left; cursor: pointer; }
+.service-panel button:hover, .service-panel button:focus-visible, .city-atlas button:hover, .city-atlas button:focus-visible { background: #315154; outline: 2px solid #9de2c8; }
+.service-panel output, .city-atlas output { display: block; margin: 11px 0; color: #ffe0a1; }
+.city-atlas { inset: 0; display: flex; gap: 28px; justify-content: center; align-items: center; background: #111923f6; box-sizing: border-box; padding: 25px; overflow: auto; }
+.city-atlas canvas { display: block; width: min(67vw,66vh); height: auto; border: 1px solid #4a686b; margin-top: 13px; cursor: crosshair; }
+.city-atlas aside { max-width: 285px; }
+.weapon-wheel { position: fixed; z-index: 16; inset: 0; display: grid; place-items: center; pointer-events: none; background: radial-gradient(ellipse, #0b1324cf, #15142582 32%, transparent 68%); color: #fff3dc; font: 650 14px "Segoe UI", sans-serif; }
+.weapon-wheel[hidden] { display: none; }
+.wheel-core { display: grid; gap: 8px; place-items: center; width: 138px; height: 138px; border: 1px solid #8ccdbfab; border-radius: 50%; background: #152031d9; align-content: center; }
+.wheel-core b { letter-spacing: .16em; }
+.wheel-core span { font-size: 12px; color: #d0c2ac; }
+.wheel-slot { position: absolute; display: grid; gap: 4px; text-align: center; width: 132px; padding: 10px 4px; color: #f8edda; background: #161f30eb; border: 1px solid #718080; transform: rotate(calc(120deg * var(--i))) translateY(clamp(-145px,-24vmin,-105px)) rotate(calc(-120deg * var(--i))); }
+.wheel-slot span { font: 650 11px "Segoe UI", sans-serif; color: #d7cbae; letter-spacing: .09em; }
+.wheel-slot.selected { border-color: #b2ffdf; background: #225453f4; box-shadow: 0 0 26px #75e2c245; }
+.wheel-slot.locked { opacity: .52; }
+@media (max-width: 690px) { .city-atlas { display: block; } .city-atlas canvas { width: min(86vw,58vh); } }
 
 /* Keep the same menus usable in narrow windows and short landscape viewports.
    The game still requires keyboard/mouse; these are responsive surfaces, not touch controls. */

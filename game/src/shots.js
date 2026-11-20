@@ -55,7 +55,7 @@ const SCENES = {
     p.updateDriving(0);
     startMission(game, 3, 3);
     game.wanted.setLevel(4);
-    const cops = [[362, -112.8, 0.29], [364.4, -107.6, 0.07], [365.6, -102.9, -0.05]].map(([x, z, yaw]) => {
+    const cops = [[362, -112.1, 0.29], [364.8, -106.5, 0.07], [366.0, -100.7, -0.05]].map(([x, z, yaw]) => {
       const car = game.police.spawnCruiser(x, z, Math.PI + yaw);
       car.syncMesh(0);
       return car;
@@ -65,7 +65,10 @@ const SCENES = {
     for (const [x,z,yaw,speed] of [[370,-138,0,2],[369.5,-128,1.8,5.8],[371,-126,1.2,5.2],[370,-111,.88,5.2],[372,-97,3.14,2],[370,-84,2.8,2]]) walker(game, x, z, yaw, speed);
     const heli = game.police.heli = new Helicopter(game);
     heli.pos.set(414, 21.5, -91);
+    heli.spot.angle = .074;
+    heli.beam.material.opacity = .047;
     heli.update(0, true);
+    heli.spot.intensity = 100;
     heli.rotor.rotation.y = .46;
     dressDrift(game, hero, cops);
     coastBackdrop(game);
@@ -81,8 +84,8 @@ const SCENES = {
     openDriverDoor(game, car);
     const p = game.player;
     p.current = 'fists';
-    p.position.set(46.57, 0, -127.78);
-    p.heading = -2.08;
+    p.position.set(46.42, 0, -127.64);
+    p.heading = -2.59;
     p.body.root.position.copy(p.position);
     p.body.root.rotation.y = p.heading;
     p.body.reach = [[-.08, 1.19, .67], [.19, .90, .33]];
@@ -90,7 +93,7 @@ const SCENES = {
     p.body.bank = -.13;
     p.body.speed = 3.2;
     p.body.update(0.37);
-    const driver = walker(game, 45.72, -128.46, 0.83, 4.15);
+    const driver = walker(game, 46.00, -128.58, 0.47, 4.15);
     driver.body.reach = [[-.49, 1.52, .25], [.24, 1.47, .52]];
     driver.body.lean = -.32;
     driver.body.bank = .17;
@@ -100,8 +103,9 @@ const SCENES = {
     game.vehicles.spawn('pickup', 43.8, -168, Math.PI);
     game.vehicles.spawn('sedan', 36.4, -184, 0);
     game.hud.setObjective('Hot Wheels', 'Steal Ocho’s ~Vortice GT~.');
-    game.hud.subtitle(CAST.vera.name, CAST.vera.color, 'That’s the Vortice. Get him out of it.', 4);
-    camera(game, [48.72, 1.75, -124.96, 44.75, 1.37, -129.55], 49);
+    game.hud.subtitle(CAST.vera.name, CAST.vera.color, 'That’s the Vortice. Don’t let it get away.', 4);
+    camera(game, [49.8, 1.83, -125.56, 44.85, 1.28, -130.2], 49);
+    game.hud.interact('Take the Vortice GT', 'F');
   },
 
   mission(game) {
@@ -124,7 +128,7 @@ const SCENES = {
     p.body.update(0);
     startMission(game, 5, 3);
     const enemies = game.missions.enemies;
-    const positions = [[155.4, 385.85], [153.3, 382.9], [150.1, 389.52], [156.8, 389.2], [163, 381.5], [164.5, 385.2]];
+    const positions = [[155.4, 385.85], [153.3, 382.9], [149.2, 388.40], [156.8, 389.2], [163, 381.5], [164.5, 385.2]];
     enemies.forEach((e, i) => {
       e.position.set(positions[i][0], 0.16, positions[i][1]);
       e.heading = Math.atan2(p.position.x - e.position.x, p.position.z - e.position.z);
@@ -141,6 +145,7 @@ const SCENES = {
     camera(game, [141.82, 1.99, 385.48, 155.0, 1.50, 386.17], 47);
     game.combat.playerShoot();
     for (const e of [enemies[1], enemies[2]]) game.combat.npcShoot(e, 0, 0);
+    game.effects.lightAt(p.body.muzzlePosition(new game.THREE.Vector3()), 0xffc070, 7, .05);
     game.effects.updateCasings(.078);
     for (const p of game.effects.active) if (p.kind === 'flash') p.size *= p.s.position.x < 147 ? 1.1 : .68;
     for (const { line } of game.effects.tracers) line.scale.multiplyScalar(0.65);

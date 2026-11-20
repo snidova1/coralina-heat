@@ -15,7 +15,7 @@ export class CameraRig {
     this.mode = 'foot';
     this.pos = new THREE.Vector3();
     this.target = new THREE.Vector3();
-    this.cine = { t: 0, centre: new THREE.Vector3(60, 0, -60), radius: 260, height: 95 };
+    this.cine = { t: 0, centre: new THREE.Vector3(395, 0, -226) };
   }
 
   shake(amount) { this.trauma = Math.min(1, this.trauma + amount); }
@@ -34,9 +34,9 @@ export class CameraRig {
     if (this.mode === 'cinematic') {
       this.cine.t += dt * 0.035;
       const a = this.cine.t;
-      cam.position.set(this.cine.centre.x + Math.cos(a) * this.cine.radius, this.cine.height + Math.sin(a * 2) * 12, this.cine.centre.z + Math.sin(a) * this.cine.radius);
-      cam.lookAt(this.cine.centre.x, 45, this.cine.centre.z);
-      cam.fov = 55;
+      cam.position.set(460 + Math.sin(a) * 10, 15.6 + (1-Math.cos(a)) * 6, -346 + Math.sin(a) * 24);
+      cam.lookAt(this.cine.centre.x, 8.6, this.cine.centre.z);
+      cam.fov = 54;
       cam.updateProjectionMatrix();
       return;
     }

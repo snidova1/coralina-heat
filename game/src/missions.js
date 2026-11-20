@@ -37,7 +37,10 @@ export class Missions {
   /** Place the next job's contact and start marker. */
   prepareNext() {
     this.clearContact();
-    if (this.finishedAll) return;
+    if (this.finishedAll) {
+      this.game.hud?.setObjective('Free roam', 'Explore Coralina Bay or take another job at Bay Dispatch.');
+      return;
+    }
     const m = this.current;
     const g = this.game;
     const lookBase = CONTACT_LOOKS[m.giver] || {};
@@ -138,7 +141,7 @@ export class Missions {
       if (e.tag) { e.tag.visible = e.alive; e.tag.rotation.y += dt * 3; }
     }
     if (!this.active) {
-      if (this.finishedAll || p.dead) return;
+      if (this.finishedAll || p.dead || g.sideJobs?.plan) return;
       if (!this.contact) this.prepareNext();
       const m = this.current;
       if (Math.hypot(p.position.x - m.start.x, p.position.z - m.start.z) < 4 && g.wanted.level === 0 && !p.vehicle) this.begin();

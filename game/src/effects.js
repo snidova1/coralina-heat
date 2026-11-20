@@ -200,6 +200,7 @@ export class Effects {
   removeMarker(m) {
     if (!m) return;
     this.scene.remove(m.group);
+    for (const mesh of m.group.children) { mesh.geometry.dispose(); mesh.material.dispose(); }
     this.markers = this.markers.filter((x) => x !== m);
   }
 

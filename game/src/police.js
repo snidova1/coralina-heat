@@ -350,10 +350,11 @@ export class Helicopter {
     const aim = new THREE.Vector3(p.x + Math.sin(this.sweep * 1.3) * 3, 0, p.z + Math.cos(this.sweep) * 3);
     this.spot.target.position.copy(aim);
     this.spot.intensity = wanted ? 260 : 0;
-    const from = this.pos.clone().add(new THREE.Vector3(0, -1.2, 0));
+    const from = this.spot.getWorldPosition(new THREE.Vector3());
     const len = from.distanceTo(aim);
     this.beam.position.copy(from);
-    this.beam.scale.set(1, len, 1);
+    const width = len * Math.tan(this.spot.angle) * .79 / 2.6;
+    this.beam.scale.set(width, len, width);
     this.beam.lookAt(aim);
     this.beam.rotateX(-Math.PI / 2);
     this.beam.visible = wanted;

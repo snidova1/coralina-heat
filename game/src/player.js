@@ -225,6 +225,7 @@ export class Player {
     if (!v) return;
     const jacked = v.driver && v.driver !== 'player';
     if (jacked) {
+      g.stats.carsStolen += 1;
       const wasCop = v.type === 'police' || (v.driver.kind === 'police');
       if (v.driver.release) v.driver.release();
       const f = v.forward;

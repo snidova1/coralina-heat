@@ -33,10 +33,12 @@ export class SaveSystem {
       current: p.current,
       position: { x: p.position.x, z: p.position.z },
       hour: g.day.hour,
+      sideJobs: g.sideJobs?.pack(),
     };
     const s = storage();
     try {
-      if (s) s.setItem(SAVE_KEY, JSON.stringify(data, (k, v) => (v === Infinity ? 'Infinity' : v)));
+      if (!s) throw new Error('Storage unavailable');
+      s.setItem(SAVE_KEY, JSON.stringify(data, (k, v) => (v === Infinity ? 'Infinity' : v)));
       if (g.hud) g.hud.toast('Game saved.');
       return true;
     } catch {
@@ -63,7 +65,8 @@ export class SaveSystem {
     if (data.weapons) p.weapons = data.weapons;
     p.current = data.current && p.weapons[data.current] ? data.current : 'fists';
     if (data.position) p.position.set(data.position.x, 0.16, data.position.z);
-    if (data.hour) g.day.setHour(data.hour);
+    if (Number.isFinite(data.hour)) g.day.setHour(data.hour);
+    g.sideJobs?.restore(data.sideJobs);
     return true;
   }
 

@@ -33,7 +33,6 @@ function noise(ctx, w, h, amount, rnd, alpha = 0.08) {
 
 /** A facade style: `map` is the daylight look, `lit` the windows that glow after sunset. */
 export function facadeTextures(style) {
-
   if (cache.has('facade-' + style)) return cache.get('facade-' + style);
   const S = 512;
   const day = canvas(S, S);

@@ -38,9 +38,9 @@ export function dressDrift(game, hero, cruisers) {
       rubber.position.set(tx, 0.027, tz);
       game.scene.add(rubber);
       if (i % 2 === 0) {
-        const p = game.effects.emit('tire', tx + Math.sin(i*2.9) * t*.48, 0.28 + t * 0.56, tz, 0, 0, 0, 0.65 + t * 1.5);
+        const p = game.effects.emit('tire', tx + Math.sin(i*2.9) * t*.48, 0.36 + t * 0.78, tz, 0, 0, 0, 0.81 + t * 1.72);
         p.age = p.life * (0.23 + t * 0.54);
-        p.s.material.color.set(i % 4 ? 0xb9b4c1 : 0xefbaba);
+        p.s.material.color.set(i % 4 ? 0xc8cbd1 : 0xffc3ad);
       }
     }
   }

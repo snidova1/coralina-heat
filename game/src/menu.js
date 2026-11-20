@@ -5,8 +5,8 @@ import { MISSIONS } from './story.js';
 
 const CONTROLS = [
   ['W A S D', 'Move / drive'], ['Mouse', 'Look and aim'], ['Left click', 'Punch / fire'], ['Right click', 'Aim'],
-  ['Shift', 'Sprint'], ['F', 'Steal / enter / exit car'], ['Space', 'Handbrake'], ['Q · 1-3 · wheel', 'Switch weapon'],
-  ['R', 'Reload'], ['H', 'Horn'], ['E', 'Next radio station'], ['G', 'Siren (police car)'], ['Esc', 'Pause'],
+  ['Shift', 'Sprint'], ['F', 'Steal / enter / exit car'], ['Space', 'Handbrake'], ['Hold Tab', 'Weapon wheel (mouse, wheel or 1–3)'], ['Q · 1–3', 'Quick switch'],
+  ['R', 'Reload'], ['H', 'Horn'], ['E', 'Next radio station'], ['G', 'Siren (police car)'], ['M', 'City atlas'], ['B', 'Use nearby shop, garage or dispatch'], ['Esc', 'Pause'],
 ];
 
 export class Menu {
@@ -18,13 +18,13 @@ export class Menu {
 
   title() {
     const g = this.game;
-    const canContinue = g.save.hasSave();
+    const canContinue = g.mode !== 'shot' && g.save.hasSave();
     this.screen = 'title';
     this.root.className = 'menu title';
     this.root.innerHTML = `
       <div class="title-art">
         <div class="logo"><span class="l1">CORALINA</span><span class="l2">HEAT</span></div>
-        <div class="tagline">Coralina Bay · where the sun never quite sets on a crime</div>
+        <div class="tagline">Coralina Bay · Every sunset has a price</div>
       </div>
       <nav class="menu-list">
         <button data-act="new" class="primary">New Game</button>
@@ -32,7 +32,7 @@ export class Menu {
         <button data-act="settings">Settings</button>
         <button data-act="controls">Controls</button>
       </nav>
-      <div class="menu-foot">${MISSIONS.length} story jobs · 5-star police · ocean drive to the marina<br><small>v1.0 · an original game · keyboard &amp; mouse</small></div>
+      <div class="menu-foot">${MISSIONS.length} story jobs · 5-star police · Bay Dispatch contracts<br><small>OCEAN DRIVE / KINGFISH MARINA</small></div>
       <div class="menu-panel"></div>`;
     this.bind();
   }

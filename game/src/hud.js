@@ -29,6 +29,7 @@ export class Hud {
         <div class="radar-caption">CORALINA BAY <span>·</span> <b></b></div>
       </div>
       <div class="hud-subtitle"></div>
+      <div class="hud-interact" hidden><kbd>B</kbd><span></span></div>
       <div class="hud-banner"><b></b><span></span></div>
       <div class="hud-mission-title"></div>
       <div class="hud-district"></div>
@@ -51,6 +52,16 @@ export class Hud {
     this.last = {};
     this.displayCash = 0;
     this.lastDistrict = '';
+    this.interaction = q('.hud-interact');
+  }
+
+  interact(name, key = 'B') {
+    const label = name + key;
+    if (this.last.interaction === label) return;
+    this.last.interaction = label;
+    this.interaction.hidden = !name;
+    this.interaction.firstElementChild.textContent = key;
+    this.interaction.lastElementChild.textContent = name;
   }
 
   get radarCanvas() { return this.el.radar; }
@@ -164,7 +175,7 @@ export class Hud {
     this.el.health.style.width = Math.max(0, p.health) + '%';
     this.el.armor.style.width = Math.max(0, p.armor) + '%';
     // mission timer
-    const timer = g.missions && g.missions.timer > 0 ? g.missions.timer : 0;
+    const timer = g.sideJobs?.plan?.remaining ?? Math.max(0, g.missions?.timer || 0);
     const tt = timer > 0 ? `${Math.floor(timer / 60)}:${String(Math.floor(timer % 60)).padStart(2, '0')}` : '';
     if (this.last.timer !== tt) { this.el.objTimer.textContent = tt; this.last.timer = tt; }
     // in a car: speed and radio

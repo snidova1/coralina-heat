@@ -27,6 +27,9 @@ import { SaveSystem } from './save.js';
 import { Menu } from './menu.js';
 import { runShot } from './shots.js';
 import { districtAt, PLACES } from './map.js';
+import { SideJobs } from './side-jobs.js';
+import { CityAtlas } from './city-atlas.js';
+import { WeaponWheel } from './weapon-wheel.js';
 
 const params = new URLSearchParams(location.search);
 const shotName = params.get('shot');
@@ -74,6 +77,9 @@ game.minimap = new Minimap(game, game.hud.radarCanvas);
 game.audio = new AudioEngine(game);
 game.menu = new Menu(game, document.getElementById('menu'));
 game.input = shotName ? null : new Input(canvas);
+game.sideJobs = shotName ? null : new SideJobs(game);
+game.atlas = shotName ? null : new CityAtlas(game);
+game.wheel = shotName ? null : new WeaponWheel(game);
 const grade = document.createElement('div');
 grade.className = 'grade';
 document.body.appendChild(grade);
@@ -146,11 +152,13 @@ game.startGame = (cont) => {
   if (cont && game.save.load()) {
     game.hud.toast('Welcome back to Coralina Bay.');
   } else {
+    game.sideJobs?.restore(null);
+    if (game.atlas) game.atlas.point = null;
     game.stats.cash = 250;
     p.position.set(352, 0.16, -150);
     game.day.setHour(17.6);
     game.missions.index = 0;
-    game.hud.hint('~WASD~ move · ~Mouse~ look · ~F~ steal a car · ~Esc~ pause. Walk into the yellow marker to start a job.', 9);
+    game.hud.hint('~WASD~ move · ~F~ enter a car · ~M~ city atlas · ~B~ use service. Walk into the yellow marker to start a story job.', 9);
   }
   game.missions.prepareNext();
   game.mode = 'play';
@@ -165,6 +173,7 @@ game.startGame = (cont) => {
 game.pause = () => {
   if (game.mode !== 'play') return;
   game.mode = 'paused';
+  game.wheel?.close();
   game.menu.pause();
   if (game.audio.ctx) game.audio.ctx.suspend();
 };
@@ -195,6 +204,8 @@ game.step = (dt) => {
   game.vehicles.update(dt);
   game.pedestrians.update(dt);
   game.missions.update(dt);
+  game.sideJobs?.update(dt);
+  game.atlas?.update();
   game.pickups.update(dt);
   game.wanted.update(dt);
   game.effects.update(dt);
@@ -236,7 +247,11 @@ if (game.input) {
     if (!document.pointerLockElement && game.mode === 'play') game.pause();
   });
   window.addEventListener('keydown', (e) => {
-    if (e.code === 'Escape' && game.mode === 'paused') game.resume();
+    if (e.repeat) return;
+    if ((e.code === 'Escape' || e.code === 'KeyM') && game.mode === 'atlas') game.atlas.close();
+    else if (e.code === 'Escape' && game.mode === 'service') game.sideJobs.close();
+    else if (e.code === 'KeyM' && game.mode === 'play') { game.wheel.close(); game.atlas.open(); }
+    else if (e.code === 'Escape' && game.mode === 'paused') game.resume();
     else if ((e.code === 'Escape' || e.code === 'KeyP') && game.mode === 'play') game.pause();
   });
 }
@@ -246,7 +261,8 @@ function frame(now) {
   const dt = Math.min(0.05, (now - last) / 1000);
   last = now;
   if (game.mode === 'play') {
-    game.step(dt);
+    game.wheel?.update();
+    if (!game.wheel?.active) game.step(dt);
     game.cameraRig.update(dt);
     game.audio.update();
     game.hud.update(dt);

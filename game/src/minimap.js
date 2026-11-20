@@ -2,6 +2,8 @@
 // island (water, beach, blocks, streets, the canal and the bridge) with blips for police, gang
 // members, mission contacts and objectives, pickups, and a north marker.
 import { LINES, ROAD_HALF, ISLAND, BEACH, CANAL, BRIDGE, BOULEVARD_X, PLACES } from './map.js';
+import { streetRoute } from './city-atlas.js';
+import { SERVICES } from './side-jobs.js';
 
 const X0 = -1060;
 const Z0 = -470;
@@ -58,6 +60,8 @@ export class Minimap {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
     this.image = buildMapImage(game.city);
+    this.originX = X0;
+    this.originZ = Z0;
     this.zoom = 0.9;
   }
 
@@ -96,9 +100,16 @@ export class Minimap {
     if (g.wanted.level > 0) {
       ctx.fillStyle = Math.floor(g.time * 4) % 2 ? 'rgba(255,40,60,0.16)' : 'rgba(40,90,255,0.16)';
       ctx.fillRect(0, 0, S, S);
+      if (g.wanted.searching) {
+        const [x,z] = toScreen(g.wanted.lastKnown.x, g.wanted.lastKnown.z);
+        ctx.beginPath(); ctx.arc(x,z,(45+g.wanted.level*12)*s,0,Math.PI*2);
+        ctx.fillStyle = 'rgba(255,120,93,.19)'; ctx.fill();
+        ctx.strokeStyle = 'rgba(255,184,147,.8)'; ctx.lineWidth = 2; ctx.stroke();
+      }
     }
     // GPS line toward the target
-    const target = g.missions ? g.missions.targetPoint : null;
+    const custom = g.atlas?.point;
+    const target = g.sideJobs?.target || custom || g.missions?.targetPoint;
     const blips = [];
     if (g.missions) blips.push(...g.missions.blips());
     if (g.police) {
@@ -108,19 +119,22 @@ export class Minimap {
     }
     if (g.pickups) for (const k of g.pickups.list) if (!k.taken) blips.push({ x: k.x, z: k.z, kind: k.kind, small: true });
     blips.push({ x: PLACES.safehouse.x, z: PLACES.safehouse.z, kind: 'home' });
+    if (g.sideJobs) for (const s of SERVICES) if (s.id !== 'garage') blips.push({ ...s, kind: 'service' });
+    if (g.sideJobs?.target) blips.push({ ...g.sideJobs.target, kind: 'objective' });
+    else if (custom) blips.push({ ...custom, kind: 'pin' });
     ctx.restore();
     if (target) {
-      const [tx, ty] = toScreen(target.x, target.z);
       ctx.save();
       ctx.beginPath();
       ctx.arc(cx, cy, R, 0, Math.PI * 2);
       ctx.clip();
-      ctx.strokeStyle = 'rgba(255,210,63,0.85)';
+      ctx.strokeStyle = custom === target ? '#ffabd0' : '#ffcf77';
       ctx.lineWidth = 3;
       ctx.setLineDash([6, 5]);
       ctx.beginPath();
       ctx.moveTo(cx, cy);
-      ctx.lineTo(tx, ty);
+      const points = p.vehicle || custom === target ? streetRoute(p.position,target) : [target];
+      for (const t of points) ctx.lineTo(...toScreen(t.x,t.z));
       ctx.stroke();
       ctx.restore();
     }
@@ -129,7 +143,7 @@ export class Minimap {
       const dx = bx - cx;
       const dy = by - cy;
       const d = Math.hypot(dx, dy);
-      const edge = b.kind === 'objective' || b.kind === 'contact' || b.kind === 'home' || b.kind === 'vehicle';
+      const edge = b.kind === 'objective' || b.kind === 'contact' || b.kind === 'home' || b.kind === 'vehicle' || b.kind === 'pin';
       if (d > R - 8) {
         if (!edge) continue;
         bx = cx + (dx / d) * (R - 8);
@@ -195,6 +209,11 @@ export class Minimap {
     ctx.strokeStyle = '#000';
     ctx.lineWidth = 2;
     switch (b.kind) {
+      case 'pin':
+      case 'service':
+        ctx.fillStyle = b.color || '#ffabd0';
+        ctx.beginPath(); ctx.moveTo(0,-7); ctx.lineTo(6,0); ctx.lineTo(0,7); ctx.lineTo(-6,0); ctx.closePath(); ctx.fill(); ctx.stroke();
+        break;
       case 'police': {
         const r = b.small ? 4 : 6;
         ctx.fillStyle = Math.floor(t * 6) % 2 ? '#ff3050' : '#3070ff';
