@@ -353,7 +353,7 @@ export class Helicopter {
     const from = this.spot.getWorldPosition(new THREE.Vector3());
     const len = from.distanceTo(aim);
     this.beam.position.copy(from);
-    const width = len * Math.tan(this.spot.angle) * .79 / 2.6;
+    const width = Math.min(1.35, len * Math.tan(this.spot.angle) * .79 / 2.6);
     this.beam.scale.set(width, len, width);
     this.beam.lookAt(aim);
     this.beam.rotateX(-Math.PI / 2);
