@@ -33,8 +33,7 @@ function noise(ctx, w, h, amount, rnd, alpha = 0.08) {
 
 /** A facade style: `map` is the daylight look, `lit` the windows that glow after sunset. */
 export function facadeTextures(style) {
-  const asset = assetTexture(style === 'glass' || style === 'office' ? 'tex_facade_glass' : 'tex_facade_deco');
-  if (asset && !style.startsWith('shop') && style !== 'warehouse') return { map: asset, lit: null };
+
   if (cache.has('facade-' + style)) return cache.get('facade-' + style);
   const S = 512;
   const day = canvas(S, S);
@@ -138,7 +137,7 @@ export function facadeTextures(style) {
     }
   } else if (style.startsWith('shop')) {
     // three storefronts per tile: sign band, striped awning, lit shop window and a door
-    const names = ['CAFÉ SOL', 'BODEGA', 'SURF SHOP', 'PIZZA', 'TATTOO', 'LAUNDRY', 'CUBANITO', 'PAWN', 'NAILS', 'LIQUOR', 'TACOS', 'GYM'];
+    const names = ['CAFÉ SOL', 'BODEGA', 'PALM & PORT', 'PIZZA', 'INK ALLEY', 'LAUNDERETTE', 'CUBANITO', 'GOLD EXCHANGE', 'LUNA SALON', 'BAY SPIRITS', 'TACOS', 'GYM', 'RICO MOTORS', 'VINYL VAULT', 'EL FARO', 'MARISOL DELI', 'RUM ROOM', 'CAFÉ NARANJA', 'SAINT LUCIA', 'LOW TIDE', 'SEAGLASS'];
     const awnings = [['#e63946', '#fff'], ['#2a9d8f', '#fff'], ['#ffb703', '#fff'], ['#3a86ff', '#fff'], ['#ff5fa2', '#fff'], ['#222', '#ffd23f']];
     d.fillStyle = '#e8e0d2';
     d.fillRect(0, 0, S, S);
@@ -160,21 +159,27 @@ export function facadeTextures(style) {
       l.textAlign = 'center';
       l.textBaseline = 'middle';
       l.fillText(name, x + sw / 2, 56, sw - 30);
-      for (let s = 0; s < 8; s++) {
-        d.fillStyle = s % 2 ? a1 : a2;
-        d.fillRect(x + 6 + (s * (sw - 12)) / 8, 96, (sw - 12) / 8 + 1, 60);
-      }
-      d.fillStyle = 'rgba(0,0,0,0.25)';
-      d.fillRect(x + 6, 150, sw - 12, 8);
+      d.fillStyle = a1;
+      d.fillRect(x + 6, 95, sw - 12, 9);
+      d.fillStyle = a2;
+      d.fillRect(x + 6, 105, sw - 12, 3);
       const g = d.createLinearGradient(0, 165, 0, S);
       g.addColorStop(0, '#4c6f86');
       g.addColorStop(1, '#1b2b38');
       d.fillStyle = g;
       d.fillRect(x + 12, 170, sw * 0.58, S - 200);
+      for (let k = 0; k < 9; k++) {
+        d.fillStyle = ['#987961', '#5d5e5c', '#b3a47e', '#775a51'][k % 4];
+        const bh = 13 + rnd()*40;
+        d.fillRect(x + 19 + (k%4)*20, 405 - Math.floor(k/4)*65 - bh, 8 + rnd()*10, bh);
+      }
       d.fillStyle = '#ffe2a8';
       d.globalAlpha = 0.35;
       d.fillRect(x + 18, 250, sw * 0.5, S - 290);
       d.globalAlpha = 1;
+      d.fillStyle = '#26343c';
+      d.fillRect(x + 56, 169, 4, 304);
+      d.fillRect(x + 12, 365, 99, 5);
       l.fillStyle = '#ffd59a';
       l.fillRect(x + 12, 170, sw * 0.58, S - 200);
       d.fillStyle = '#2b2b2b';

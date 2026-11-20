@@ -6,6 +6,8 @@ import { instanceProps, hasModel } from './assets.js';
 import { GeometryBucket } from './geometry.js';
 import { facadeTextures, surfaceTexture, waterNormals, neonSignTexture, decalTexture, glowTexture } from './textures.js';
 import { makeStream } from './rng.js';
+import { dressBeachSand } from './surface-detail.js';
+import { Architecture } from './architecture.js';
 import {
   LINES, LINE_MIN, LINE_MAX, ROAD_HALF, ISLAND, BEACH, CANAL, BRIDGE, BOULEVARD_X, SEA_LEVEL, PLACES,
 } from './map.js';
@@ -42,6 +44,8 @@ export class City {
     this.palms = [];
     this.signs = [];
     this.boats = [];
+    this.coastClock = { value: 0 };
+    this.architecture = new Architecture(scene);
     this.buildLand();
     this.buildWater();
     this.buildBlocks();
@@ -52,6 +56,7 @@ export class City {
     this.buildMainland();
     this.buildStreetFurniture();
     this.flushBuildings();
+    this.architecture.flush();
     this.buildPalms();
     this.buildAssetPlazas();
   }
@@ -69,7 +74,8 @@ export class City {
       top.flat(x0, z0, x1, z1, 0, 6);
       walls.boxSides((x0 + x1) / 2, (z0 + z1) / 2, x1 - x0, z1 - z0, -7, 0, 6, 6);
     }
-    const sand = new THREE.MeshStandardMaterial({ map: surfaceTexture('sand'), roughness: 1 });
+    const sand = new THREE.MeshStandardMaterial({ map: surfaceTexture('sand'), roughness: 0.93 });
+    dressBeachSand(sand, this.coastClock);
     const stone = new THREE.MeshStandardMaterial({ map: surfaceTexture('stone'), roughness: 0.95 });
     const a = new THREE.Mesh(top.build(), sand);
     const b = new THREE.Mesh(walls.build(), stone);
@@ -97,7 +103,7 @@ export class City {
     // sand sloping from the promenade down under the surf
     const bucket = new GeometryBucket();
     for (const [z0, z1] of [[ISLAND.minZ - 30, CANAL.zMin], [CANAL.zMax, ISLAND.maxZ + 40]]) {
-      const steps = 8;
+      const steps = 48;
       for (let s = 0; s < steps; s++) {
         const xa = BEACH.x0 + ((BEACH.x1 + 40 - BEACH.x0) * s) / steps;
         const xb = BEACH.x0 + ((BEACH.x1 + 40 - BEACH.x0) * (s + 1)) / steps;
@@ -184,7 +190,8 @@ export class City {
     const tile = style === 'glass' ? [12, 14] : style === 'warehouse' ? [16, 14] : [14, 14];
     const b = this.facadeBucket(style, tint);
     if (opts.shops && h > 7) {
-      this.facadeBucket('shop' + Math.floor(this.rnd() * 4), 0xffffff).boxSides(x, z, w, d, 0.1, 4.6, 16, 4.5);
+      const seed = this.rnd();
+      this.facadeBucket('shop' + Math.floor(seed * 12), 0xffffff).boxSides(x, z, w, d, 0.1, 4.6, 24, 4.5);
       this.trimBucket.box(x, 4.75, z, w + 0.5, 0.3, d + 0.5, 2);
       b.boxSides(x, z, w, d, 4.6, h, tile[0], tile[1], undefined, 4.6 / tile[1]);
     } else b.boxSides(x, z, w, d, 0.1, h, tile[0], tile[1]);
@@ -204,6 +211,7 @@ export class City {
         this.roofBucket.box(ax, h + 0.9, az, 2 + this.rnd() * 3, 1.8, 2 + this.rnd() * 3, 2);
       }
     }
+    this.architecture.dress(x, z, w, d, h, style, tint, opts.shops);
     if (opts.collide !== false) this.addCollider(x - w / 2, z - d / 2, x + w / 2, z + d / 2, h);
   }
 
@@ -694,6 +702,7 @@ export class City {
   // ---------- per-frame and queries ----------
 
   update(dt, time) {
+    this.coastClock.value = time;
     this.waterMat.normalMap.offset.set(time * 0.004, time * 0.0025);
     for (const b of this.boats) b.obj.position.y = b.base + Math.sin(time * 1.2 + b.phase) * 0.12;
     for (const s of this.signs) {

@@ -1,6 +1,7 @@
 // Streets of Coralina Bay: asphalt, lane paint, crosswalks, raised pavements, street lamps and
 // the lane graph that traffic, police and pedestrians follow.
 import * as THREE from 'three';
+import { weatherAsphalt } from './surface-detail.js';
 import { GeometryBucket } from './geometry.js';
 import { surfaceTexture } from './textures.js';
 import { LINES, LINE_MIN, LINE_MAX, STEP, ROAD_HALF, WALK, BRIDGE, CANAL, BOULEVARD_X, BEACH } from './map.js';
@@ -87,6 +88,7 @@ export class Roads {
     this.slab(pavement, BOULEVARD_X + ROAD_HALF, CANAL.zMax, BEACH.x0, LINE_MAX + ROAD_HALF + 25, false);
 
     const asphaltMat = new THREE.MeshStandardMaterial({ map: surfaceTexture('asphalt'), roughness: 0.82, color: 0xb9b6b8 });
+    weatherAsphalt(asphaltMat);
     const road = new THREE.Mesh(asphalt.build(), asphaltMat);
     road.receiveShadow = true;
     const white = new THREE.Mesh(paintW.build(), new THREE.MeshStandardMaterial({ color: 0xf2efe6, roughness: 0.6 }));
@@ -95,7 +97,29 @@ export class Roads {
     const pave = new THREE.Mesh(pavement.build(), new THREE.MeshStandardMaterial({ map: surfaceTexture('pavement'), roughness: 0.9 }));
     pave.receiveShadow = true;
     this.scene.add(road, white, yellow, pave);
+    this.buildUtilityCovers();
     this.buildLamps();
+  }
+
+  buildUtilityCovers() {
+    const plate = new GeometryBucket(true);
+    const disc = new THREE.CircleGeometry(0.36, 22).rotateX(-Math.PI / 2);
+    const ring = new THREE.RingGeometry(0.293, 0.315, 22).rotateX(-Math.PI / 2);
+    const m = new THREE.Matrix4();
+    const dark = new THREE.Color(0x323537), rim = new THREE.Color(0x747574);
+    for (const x of LINES) for (const z of LINES) {
+      const px = x + 1.17, pz = z + 19;
+      plate.addGeometry(disc, m.makeTranslation(px, 0.019, pz), dark);
+      plate.addGeometry(ring, m.makeTranslation(px, 0.022, pz), rim);
+      for (let j = -3; j <= 3; j++) for (let i = -3; i <= 3; i++) {
+        if (i*i+j*j > 13) continue;
+        const cx = px + (i + (j % 2) * 0.23) * 0.075, cz = pz + j * 0.075;
+        plate.flat(cx - 0.021, cz - 0.011, cx + 0.021, cz + 0.011, 0.023, 1, false, rim);
+      }
+    }
+    const mesh = new THREE.Mesh(plate.build(), new THREE.MeshStandardMaterial({ vertexColors: true, metalness: 0.35, roughness: 0.62 }));
+    mesh.receiveShadow = true;
+    this.scene.add(mesh);
   }
 
   /** A pavement slab with a curb edge; skipped where the canal cuts through. */

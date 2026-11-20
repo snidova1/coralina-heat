@@ -144,7 +144,7 @@ const SCENES = {
     game.player.position.set(368, 0, -236);
     game.player.body.root.visible = false;
     game.menu.title();
-    camera(game, [474, 8.6, -344, 404, 7.2, -233], 52);
+    camera(game, [460, 15.6, -346, 394, 8.6, -225], 54);
   },
 };
 

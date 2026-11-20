@@ -16,46 +16,13 @@ export function goldenHour(game, direction) {
   d.sun.color.set(0xffbc83);
   d.sun.intensity = 3.1;
   d.hemi.color.set(0xaabfff);
-  d.hemi.groundColor.set(0x948799);
-  d.hemi.intensity = 0.98;
+  d.hemi.groundColor.set(0xaa9893);
+  d.hemi.intensity = 1.15;
   game.renderer.toneMappingExposure = 0.92;
   game.scene.fog.color.set(0x89536e);
-  game.scene.fog.density = 0.00039;
+  game.scene.fog.density = 0.00071;
   d.bakeEnvironment();
   game.scene.environmentIntensity = 0.44;
-  sunsetWater(game, d.uniforms);
-}
-
-function sunsetWater(game, sky) {
-  const water = game.city.waterMat;
-  water.color.set(0x145268);
-  water.roughness = 0.22;
-  water.onBeforeCompile = shader => {
-    shader.uniforms.sunsetDirection = sky.sunDir;
-    shader.uniforms.sunsetColor = sky.sunColor;
-    shader.uniforms.horizonTint = sky.horizonColor;
-    shader.vertexShader = 'varying vec3 vOceanPoint;\n' + shader.vertexShader.replace('#include <worldpos_vertex>', `
-      #include <worldpos_vertex>
-      vOceanPoint = (modelMatrix * vec4(transformed, 1.0)).xyz;
-    `);
-    shader.fragmentShader = `
-      varying vec3 vOceanPoint;
-      uniform vec3 sunsetDirection, sunsetColor, horizonTint;
-    ` + shader.fragmentShader.replace('#include <opaque_fragment>', `
-      vec3 eye = normalize(cameraPosition - vOceanPoint);
-      vec2 p = vOceanPoint.xz;
-      vec2 ripple = vec2(sin(p.x * 0.77 + p.y * 1.38), cos(p.x * 1.47 - p.y * 0.82));
-      ripple += 0.46 * vec2(cos(p.y * 3.28), sin(p.x * 2.45 + p.y * 1.65));
-      vec3 reflected = reflect(-eye, normalize(vec3(ripple.x * 0.043, 1.0, ripple.y * 0.043)));
-      float alongSun = max(dot(reflected, sunsetDirection), 0.0);
-      float glare = pow(alongSun, 110.0) * 0.26 + pow(alongSun, 1250.0) * 1.55;
-      float grazing = pow(1.0 - clamp(eye.y, 0.0, 1.0), 5.0);
-      outgoingLight = mix(outgoingLight, horizonTint * 0.36 + vec3(0.018, 0.037, 0.068), grazing * 0.82);
-      outgoingLight += sunsetColor * glare * grazing;
-      #include <opaque_fragment>
-    `);
-  };
-  water.needsUpdate = true;
 }
 
 export function dressDrift(game, hero, cruisers) {
