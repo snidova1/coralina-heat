@@ -132,6 +132,8 @@ const SCENES = {
     targetBadge(game, enemies[0], 'SAINT OCHO');
     game.hud.subtitle(CAST.ocho.name, CAST.ocho.color, 'You came back for THIS? Coralina eats boys like you!', 4);
     game.missions.update(0);
+    // The named badge already includes an arrow; retain the stock markers on the other targets.
+    enemies[0].tag.visible = false;
   },
 
   title(game) {

@@ -100,6 +100,7 @@ kbd { background: #2a2440; border: 1px solid #5a4f80; border-radius: 3px; paddin
 .capture .grade { background: radial-gradient(ellipse at 50% 45%, transparent 58%, rgba(9,16,24,.22) 100%); }
 .capture .hud-objective { border: 0; background: none; padding: 0; text-shadow: 0 1px 3px #10141d, 0 2px 8px #10141d; }
 .capture .hud-hint, .capture .hud-toast, .capture .hud-mission-title { display: none; }
+.capture .hud-subtitle { text-wrap: balance; }
 @media (min-width: 900px) and (min-height: 601px) {
   .capture .hud-radar, .capture .hud-radar canvas { width: 154px; }
   .capture .hud-radar canvas { height: 154px; }
