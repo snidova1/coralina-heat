@@ -31,6 +31,10 @@ export class Input {
     });
     document.addEventListener('pointerlockchange', () => {
       this.locked = document.pointerLockElement === canvas;
+      if (!this.locked) {
+        this.mouse.left = this.mouse.right = false;
+        this.endFrame();
+      }
     });
   }
 
@@ -38,6 +42,10 @@ export class Input {
     if (!this.locked && this.canvas.requestPointerLock) {
       try { const p = this.canvas.requestPointerLock(); if (p && p.catch) p.catch(() => {}); } catch { /* not allowed yet */ }
     }
+  }
+
+  unlockPointer() {
+    if (document.pointerLockElement === this.canvas) document.exitPointerLock();
   }
 
   isDown(code) { return this.down.has(code); }

@@ -67,7 +67,7 @@ export class Player {
       return;
     }
     if (input && g.mode === 'play') {
-      g.cameraRig.look(input.mouse.dx, input.mouse.dy);
+      g.cameraRig.look(input.mouse.dx, input.mouse.dy * (g.settings.invertY ? -1 : 1));
       if (input.mouse.wheel) this.cycleWeapon(input.mouse.wheel > 0 ? 1 : -1);
       if (input.wasPressed('KeyQ')) this.cycleWeapon(1);
       if (input.wasPressed('Digit1')) this.current = 'fists';

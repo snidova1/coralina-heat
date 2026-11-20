@@ -173,7 +173,9 @@ game.startGame = (cont) => {
 game.pause = () => {
   if (game.mode !== 'play') return;
   game.mode = 'paused';
+  game.input?.unlockPointer();
   game.wheel?.close();
+  game.hud.show(false);
   game.menu.pause();
   if (game.audio.ctx) game.audio.ctx.suspend();
 };
@@ -181,6 +183,7 @@ game.pause = () => {
 game.resume = () => {
   game.mode = 'play';
   game.menu.hide();
+  game.hud.show(true);
   if (game.audio.ctx) game.audio.ctx.resume();
   if (game.input) game.input.lockPointer();
 };
@@ -188,6 +191,7 @@ game.resume = () => {
 game.toTitle = () => {
   if (game.player.vehicle) game.player.exitVehicle();
   game.mode = 'title';
+  game.input?.unlockPointer();
   game.hud.show(false);
   game.cameraRig.mode = 'cinematic';
   game.menu.title();

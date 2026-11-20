@@ -30,7 +30,7 @@ export class CityAtlas {
     const g = this.game;
     if (g.mode !== 'play') return;
     g.mode = 'atlas';
-    document.exitPointerLock?.();
+    g.input?.unlockPointer();
     this.overlay.hidden = false;
     this.overlay.innerHTML = `<div class="atlas-page"><header>Coralina Bay / Navigation</header><h2>City atlas</h2><canvas width="900" height="882" aria-label="North-up city map"></canvas></div><aside><h3>Set a waypoint</h3><p>Click a street or select a destination. The route is shown on your radar.</p><output aria-live="polite"></output></aside>`;
     this.canvas = this.overlay.querySelector('canvas');

@@ -47,7 +47,7 @@ export class SideJobs {
     const g = this.game;
     if (g.mode !== 'play') return;
     g.mode = 'service';
-    document.exitPointerLock?.();
+    g.input?.unlockPointer();
     this.panel.hidden = false;
     const items = service.id === 'supply' ? [
       ['pistol','Kestrel .45 + 36 rounds',175],['smg','Vandal SMG + 96 rounds',600],

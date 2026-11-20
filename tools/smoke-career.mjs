@@ -28,6 +28,12 @@ try {
   await page.click('[data-act="new"]');
   await waitMode('play');
   await page.waitForFunction('coralina.input.locked');
+  await page.keyboard.press('KeyP');
+  await waitMode('paused');
+  await page.waitForFunction('!document.pointerLockElement');
+  await page.click('[data-act="resume"]');
+  await waitMode('play');
+  await page.waitForFunction('coralina.input.locked');
   await page.keyboard.press('KeyM');
   await waitMode('atlas');
   await button('Marisol Supply');
