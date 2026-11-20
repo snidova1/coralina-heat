@@ -205,7 +205,17 @@ export function createCharacter(look) {
         model.position.y = this.deadT * 0.2;
         return;
       }
-      if (this.pose === 'aim' || this.punchT > 0) {
+      if (this.reach) {
+        for (let i = 0; i < 2; i++) {
+          const side = i === 0 ? 'Right' : 'Left';
+          const hand = new THREE.Vector3(...this.reach[i]);
+          const elbow = hand.clone().multiplyScalar(0.55);
+          elbow.x += i === 0 ? -0.13 : 0.13;
+          elbow.y += 0.57;
+          aimBone(bones[`${side}Arm`], elbow);
+          aimBone(bones[`${side}ForeArm`], hand);
+        }
+      } else if (this.pose === 'aim' || this.punchT > 0) {
         const lift = -this.aimPitch * 0.6 + this.recoil * 0.035;
         aimBone(bones.RightArm, new THREE.Vector3(-0.19, 1.28 + lift, 0.36));
         aimBone(bones.RightForeArm, new THREE.Vector3(-0.07, 1.34 + lift, 0.65));

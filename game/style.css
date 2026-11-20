@@ -97,6 +97,18 @@ kbd { background: #2a2440; border: 1px solid #5a4f80; border-radius: 3px; paddin
 .stats b { display: block; font: italic 900 26px "Arial Black", Impact, sans-serif; }
 .stats span { font: 13px "Trebuchet MS", sans-serif; color: #c9c0e0; letter-spacing: 1px; text-transform: uppercase; }
 .grade { position: fixed; inset: 0; pointer-events: none; z-index: 5; background: radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0) 55%, rgba(30,0,40,.38) 100%); mix-blend-mode: multiply; }
+.capture .grade { background: radial-gradient(ellipse at 50% 45%, transparent 58%, rgba(9,16,24,.22) 100%); }
+.capture .hud-objective { border: 0; background: none; padding: 0; text-shadow: 0 1px 3px #10141d, 0 2px 8px #10141d; }
+.capture .hud-hint, .capture .hud-toast, .capture .hud-mission-title { display: none; }
+@media (min-width: 900px) and (min-height: 601px) {
+  .capture .hud-radar, .capture .hud-radar canvas { width: 154px; }
+  .capture .hud-radar canvas { height: 154px; }
+  .capture .hud-radar { left: 26px; bottom: 24px; }
+  .capture .hud-subtitle { bottom: 23px; max-width: 800px; font-size: 20px; }
+  .capture .hud-vehicle { bottom: 114px; font-size: 21px; }
+  .capture .hud-speedo { bottom: 22px; }
+  .capture .hud-speedo b { font-size: 45px; }
+}
 
 .menu-panel { max-height: calc(100dvh - 430px); overflow: auto; }
 .pause .menu-panel { max-height: calc(100dvh - 230px); }
