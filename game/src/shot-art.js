@@ -317,10 +317,32 @@ export function openDriverDoor(game, car) {
   car.shell.material = car.shell.material.clone();
   car.shell.material.clippingPlanes = cut;
   car.shell.material.clipIntersection = true;
-  const seat = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.52, 0.15), trim);
-  seat.position.set(-0.38, 0.73, -0.41);
-  seat.rotation.x = -0.16;
-  car.body.add(seat);
+  // The cabin the open door reveals: carpeted tub, bucket seats, wheel, dash and console.
+  const leather = new THREE.MeshStandardMaterial({ color: 0xb07a52, roughness: 0.55 });
+  const carpet = new THREE.MeshStandardMaterial({ color: 0x1a1618, roughness: 0.95 });
+  const part = (geo, material, x, y, z, rx = 0, ry = 0, rz = 0) => {
+    const mesh = new THREE.Mesh(geo, material);
+    mesh.position.set(x, y, z);
+    mesh.rotation.set(rx, ry, rz);
+    mesh.castShadow = mesh.receiveShadow = true;
+    car.body.add(mesh);
+    return mesh;
+  };
+  part(new THREE.BoxGeometry(1.62, 0.05, 1.5), carpet, 0, 0.4, 0.05);
+  part(new THREE.BoxGeometry(0.04, 0.42, 1.3), trim, 0.78, 0.66, 0.05);
+  for (const x of [-0.38, 0.38]) {
+    part(new THREE.BoxGeometry(0.5, 0.14, 0.5), leather, x, 0.52, -0.05, -0.08);
+    part(new THREE.BoxGeometry(0.5, 0.5, 0.13), leather, x, 0.78, -0.33, -0.24);
+    part(new THREE.BoxGeometry(0.26, 0.13, 0.09), leather, x, 1.06, -0.41, -0.24);
+    for (const side of [-1, 1]) part(new THREE.BoxGeometry(0.07, 0.2, 0.5), trim, x + side * 0.25, 0.6, -0.05, -0.08);
+  }
+  part(new THREE.BoxGeometry(1.6, 0.2, 0.42), trim, 0, 0.9, 0.66, 0.25);
+  part(new THREE.BoxGeometry(0.22, 0.24, 0.9), trim, 0, 0.53, 0.18);
+  part(new THREE.BoxGeometry(0.06, 0.12, 0.12), satin, 0, 0.7, 0.28, 0.5);
+  part(new THREE.TorusGeometry(0.17, 0.022, 8, 24), trim, -0.38, 0.92, 0.36, -0.35);
+  part(new THREE.BoxGeometry(0.3, 0.03, 0.03), satin, -0.38, 0.92, 0.36, -0.35);
+  part(new THREE.CylinderGeometry(0.03, 0.035, 0.3, 8), trim, -0.38, 0.86, 0.48, Math.PI / 2 - 0.35);
+  part(new THREE.BoxGeometry(0.34, 0.1, 0.02), new THREE.MeshBasicMaterial({ color: 0x3fd7f0 }), -0.38, 0.99, 0.56, -0.4);
   return hinge;
 }
 

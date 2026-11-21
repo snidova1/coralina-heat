@@ -88,9 +88,9 @@ const SCENES = {
     p.body.root.position.copy(p.position);
     p.body.root.rotation.y = p.heading;
     car.root.updateMatrixWorld(true);
-    // one hand on the top of the open door, the other reaching for the wheel, leaning in to drop into the seat
+    // one hand on the top of the open door, the other on the wheel, leaning in to drop into the seat
     const V = game.THREE.Vector3;
-    boardCar(p.body, door.localToWorld(new V(0.02, 1.2, -1.1)), new V(44.3, 1.0, -129.0));
+    boardCar(p.body, door.localToWorld(new V(0.02, 1.2, -1.1)), car.body.localToWorld(new V(-0.52, 0.95, 0.33)));
     const veraLook = { ...randomLook(), skirt: true, authoredPalette: true, skin: 0xd9a07a, shirt: 0xd98270, pants: 0xd98270, print: false };
     const vera = new Actor(game, 'civilian', 46.0, -130.02, veraLook);
     vera.position.y = 0.02;
