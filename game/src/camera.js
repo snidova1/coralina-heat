@@ -23,7 +23,7 @@ export class CameraRig {
   /** Feed mouse motion (pointer-locked) into yaw and pitch. */
   look(dx, dy) {
     this.yaw -= dx * 0.0024;
-    this.pitch = Math.max(-0.45, Math.min(1.1, this.pitch + dy * 0.002));
+    this.pitch = Math.max(-0.45, Math.min(1.1, this.pitch + dy * (this.game.settings.invertY ? -0.002 : 0.002)));
     if (Math.abs(dx) + Math.abs(dy) > 0.5) this.lookIdle = 0;
   }
 
@@ -34,6 +34,13 @@ export class CameraRig {
     if (this.mode === 'cinematic') {
       this.cine.t += dt * 0.035;
       const a = this.cine.t;
+      if (this.cine.pose) {
+        const [x,y,z,tx,ty,tz] = this.cine.pose;
+        cam.position.set(x + Math.sin(a) * 11, y + Math.sin(a * .62) * 2, z + Math.sin(a * .91) * 13);
+        cam.lookAt(tx,ty,tz);
+        if (cam.fov !== 51) { cam.fov = 51; cam.updateProjectionMatrix(); }
+        return;
+      }
       cam.position.set(this.cine.centre.x + Math.cos(a) * this.cine.radius, this.cine.height + Math.sin(a * 2) * 12, this.cine.centre.z + Math.sin(a) * this.cine.radius);
       cam.lookAt(this.cine.centre.x, 45, this.cine.centre.z);
       cam.fov = 55;

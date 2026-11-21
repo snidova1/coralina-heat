@@ -34,7 +34,7 @@ writeFileSync(
   join(out, 'dossier.json'),
   buildDossier(out, {
     text_max_bytes: 163840,
-    screenshots: { max: 4, max_bytes: 262144 },
+    screenshots: { max: 4, max_bytes: 250 * 1024 },
     game_max_files: 993,
     game_max_bytes: 50331648,
     game_path_max_bytes: 1000,

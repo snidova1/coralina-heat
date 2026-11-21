@@ -2,7 +2,7 @@
 // the mission objective, dialogue subtitles, toasts, big JOB DONE / FLATLINED banners, district
 // and vehicle names, the speedometer and radio, the crosshair and damage flashes.
 const STAR = '<svg viewBox="0 0 24 24"><path d="M12 1.8l3.1 6.6 7.2.9-5.3 5 1.4 7.1L12 17.9l-6.4 3.5L7 14.3 1.7 9.3l7.2-.9z"/></svg>';
-const ICONS = {
+export const ICONS = {
   fists: '<svg viewBox="0 0 64 32"><path d="M14 8h26a6 6 0 016 6v6a6 6 0 01-6 6H18l-6-4V12z" fill="currentColor"/><path d="M22 8v18M30 8v18M38 8v18" stroke="#000" stroke-width="2" opacity=".35"/></svg>',
   pistol: '<svg viewBox="0 0 64 32"><path d="M6 8h48v8H30l-2 4h-6l-3 10h-9l4-14H6z" fill="currentColor"/><rect x="54" y="9" width="5" height="4" fill="currentColor"/></svg>',
   smg: '<svg viewBox="0 0 64 32"><path d="M2 9h54v7H40l-2 3h-5l-1 10h-7l1-10h-6l-3 7h-7l3-10H2z" fill="currentColor"/><rect x="26" y="16" width="5" height="12" fill="currentColor"/></svg>',
@@ -153,6 +153,7 @@ export class Hud {
     }
     // weapon
     const wid = p.current;
+    this.el.weaponIcon.hidden = Boolean(p.vehicle);
     if (this.last.weapon !== wid) { this.el.weaponIcon.innerHTML = ICONS[wid]; this.last.weapon = wid; }
     const s = p.ammoState;
     const ammoText = p.weapon.melee ? '' : p.reloadT > 0 ? 'RELOAD' : `${s.clip}<small>/${s.ammo}</small>`;

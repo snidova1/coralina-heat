@@ -51,11 +51,17 @@ export class Player {
     if (this.current === 'fists') this.current = id;
   }
 
+  equip(id) {
+    if (!this.weapons[id] || id === this.current) return;
+    this.current = id;
+    this.reloadT = 0;
+    if (this.game.audio) this.game.audio.click();
+  }
+
   cycleWeapon(step = 1) {
     const ids = Object.keys(WEAPONS).filter((k) => this.weapons[k]);
     const i = ids.indexOf(this.current);
-    this.current = ids[(i + step + ids.length) % ids.length];
-    if (this.game.audio) this.game.audio.click();
+    this.equip(ids[(i + step + ids.length) % ids.length]);
   }
 
   update(dt) {
@@ -67,12 +73,13 @@ export class Player {
       return;
     }
     if (input && g.mode === 'play') {
+      if (g.weaponWheel.update(input)) return;
       g.cameraRig.look(input.mouse.dx, input.mouse.dy);
       if (input.mouse.wheel) this.cycleWeapon(input.mouse.wheel > 0 ? 1 : -1);
       if (input.wasPressed('KeyQ')) this.cycleWeapon(1);
-      if (input.wasPressed('Digit1')) this.current = 'fists';
-      if (input.wasPressed('Digit2') && this.weapons.pistol) this.current = 'pistol';
-      if (input.wasPressed('Digit3') && this.weapons.smg) this.current = 'smg';
+      if (input.wasPressed('Digit1')) this.equip('fists');
+      if (input.wasPressed('Digit2')) this.equip('pistol');
+      if (input.wasPressed('Digit3')) this.equip('smg');
       if (input.wasPressed('KeyF')) {
         if (this.vehicle) this.exitVehicle();
         else this.tryEnterVehicle();

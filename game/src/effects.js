@@ -35,6 +35,16 @@ export class Effects {
     this.flashT = 0;
     this.tracers = [];
     this.markers = [];
+    this.casings = [];
+    this.casingCursor = 0;
+    const brass = new THREE.MeshStandardMaterial({ color: 0xc29446, metalness: 0.65, roughness: 0.31 });
+    const shell = new THREE.CylinderGeometry(0.018, 0.018, 0.057, 8, 1, true);
+    for (let i = 0; i < 32; i++) {
+      const mesh = new THREE.Mesh(shell, brass);
+      mesh.visible = false;
+      this.scene.add(mesh);
+      this.casings.push({ mesh, velocity: new THREE.Vector3(), ttl: 0 });
+    }
   }
 
   emit(kind, x, y, z, vx = 0, vy = 0, vz = 0, scale = 1) {
@@ -64,10 +74,16 @@ export class Effects {
   }
 
   muzzleFlash(pos, dir, scale = 1) {
+    const casing = this.casings[this.casingCursor++ % this.casings.length];
+    casing.mesh.position.copy(pos).addScaledVector(dir, -0.23);
+    casing.mesh.rotation.set(0.7, 0, 1.21);
+    casing.mesh.visible = true;
+    casing.velocity.set(-dir.z * 2.7 - dir.x * 0.8, 2.2, dir.x * 2.7 - dir.z * 0.8);
+    casing.ttl = 1.9;
     this.emit('flash', pos.x, pos.y, pos.z, 0, 0, 0, scale);
     this.emit('flash', pos.x + dir.x * 0.18, pos.y + dir.y * 0.18, pos.z + dir.z * 0.18, 0, 0, 0, 0.55);
     for (let i = 0; i < 3; i++) this.emit('spark', pos.x, pos.y, pos.z, dir.x * 8 + (rand() - 0.5) * 3, dir.y * 8 + rand() * 2, dir.z * 8 + (rand() - 0.5) * 3, 0.25);
-    this.lightAt(pos, 0xffc070, 30, 0.07);
+    this.lightAt(pos, 0xffbc67, 13, 0.07);
   }
 
   lightAt(pos, color, intensity, time) {
@@ -167,6 +183,21 @@ export class Effects {
   }
 
   update(dt) {
+    for (const c of this.casings) {
+      if (c.ttl <= 0) continue;
+      c.ttl -= dt;
+      c.mesh.visible = c.ttl > 0;
+      if (c.mesh.position.y <= 0.19 && Math.abs(c.velocity.y) < 0.4) continue;
+      c.velocity.y -= 9.8 * dt;
+      c.mesh.position.addScaledVector(c.velocity, dt);
+      c.mesh.rotation.x += dt * 11;
+      c.mesh.rotation.z += dt * 8;
+      if (c.mesh.position.y < 0.19) {
+        c.mesh.position.y = 0.19;
+        c.velocity.multiplyScalar(0.37);
+        c.velocity.y = Math.abs(c.velocity.y);
+      }
+    }
     for (let i = this.active.length - 1; i >= 0; i--) {
       const p = this.active[i];
       p.age += dt;

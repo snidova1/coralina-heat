@@ -6,6 +6,7 @@ import { MISSIONS } from './story.js';
 const CONTROLS = [
   ['W A S D', 'Move / drive'], ['Mouse', 'Look and aim'], ['Left click', 'Punch / fire'], ['Right click', 'Aim'],
   ['Shift', 'Sprint'], ['F', 'Steal / enter / exit car'], ['Space', 'Handbrake'], ['Q · 1-3 · wheel', 'Switch weapon'],
+  ['Tab', 'Hold for weapon wheel'], ['M', 'District map and waypoints'], ['C', 'Phone contacts and GPS'], ['X', 'Use nearby city service'],
   ['R', 'Reload'], ['H', 'Horn'], ['E', 'Next radio station'], ['G', 'Siren (police car)'], ['Esc', 'Pause'],
 ];
 
@@ -18,7 +19,7 @@ export class Menu {
 
   title() {
     const g = this.game;
-    const canContinue = g.save.hasSave();
+    const canContinue = g.mode !== 'shot' && g.save.hasSave();
     this.screen = 'title';
     this.root.className = 'menu title';
     this.root.innerHTML = `
@@ -47,6 +48,8 @@ export class Menu {
       <nav class="menu-list">
         <button data-act="resume" class="primary">Resume</button>
         <button data-act="save">Save Game</button>
+        <button data-act="chart">District Map</button>
+        <button data-act="phone">Phone Contacts</button>
         <button data-act="settings">Settings</button>
         <button data-act="controls">Controls</button>
         <button data-act="quit">Quit to Title</button>
@@ -84,6 +87,8 @@ export class Menu {
       case 'continue': g.startGame(true); break;
       case 'resume': g.resume(); break;
       case 'save': g.save.save(); this.pause(); break;
+      case 'chart': this.chart(); break;
+      case 'phone': this.phone(); break;
       case 'quit': g.toTitle(); break;
       case 'settings': this.settings(); break;
       case 'controls': this.controls(); break;
@@ -93,12 +98,17 @@ export class Menu {
 
   panel(html) {
     const p = this.root.querySelector('.menu-panel');
+    p.classList.remove('phone-panel');
     p.innerHTML = html;
     p.classList.add('on');
     // Both title and pause panels share the compact layout and scroll container.
     if (matchMedia('(max-width: 900px), (max-height: 600px)').matches) p.scrollIntoView({ block: 'nearest' });
     return p;
   }
+
+  chart() { this.game.chart.show(this.panel('')); }
+
+  phone() { this.game.phone.open(this.panel('')); }
 
   controls() {
     this.panel(`<h3>Controls</h3><table>${CONTROLS.map(([k, v]) => `<tr><td><kbd>${k}</kbd></td><td>${v}</td></tr>`).join('')}</table>`);

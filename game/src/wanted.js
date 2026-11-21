@@ -63,9 +63,12 @@ export class Wanted {
     } else {
       this.unseenT += dt;
       this.searching = this.unseenT > 2;
-      if (this.unseenT > 8 + this.level * 3.5) this.setLevel(0);
+      const outside = Math.hypot(p.x - this.lastKnown.x, p.z - this.lastKnown.z) > this.searchRadius;
+      if (this.unseenT > 8 + this.level * 3.5 || outside && this.unseenT > 5 + this.level) this.setLevel(0);
     }
   }
+
+  get searchRadius() { return 48 + this.level * 9; }
 
   get evadeProgress() {
     return this.level ? Math.min(1, this.unseenT / (8 + this.level * 3.5)) : 0;

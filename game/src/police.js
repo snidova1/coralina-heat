@@ -163,7 +163,11 @@ export class Police {
   canSeePlayer() {
     const g = this.game;
     const p = g.player.position;
-    if (this.heli && Math.hypot(this.heli.pos.x - p.x, this.heli.pos.z - p.z) < 60) return true;
+    if (this.heli && !this.heli.leaving) {
+      const { x,y,z } = this.heli.pos;
+      const r = g.wanted.level === 5 ? 51 : 42;
+      if (Math.hypot(x-p.x,z-p.z) < r && g.city.hasLineOfSight(x,y,z,p.x,p.y+1,p.z)) return true;
+    }
     const units = this.cars.map((v) => v.position).concat(this.officers.filter((a) => a.alive).map((a) => a.position));
     for (const u of units) {
       const d = Math.hypot(u.x - p.x, u.z - p.z);
@@ -319,8 +323,12 @@ export class Helicopter {
     this.group.add(this.spot);
     game.scene.add(this.spot.target);
     this.beam = new THREE.Mesh(
-      new THREE.ConeGeometry(2.6, 1, 20, 1, true).translate(0, -0.5, 0),
-      new THREE.MeshBasicMaterial({ color: 0xdfeaff, transparent: true, opacity: 0.06, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }),
+      new THREE.ConeGeometry(1, 1, 32, 1, true).translate(0, -0.5, 0),
+      new THREE.ShaderMaterial({
+        vertexShader: 'varying vec2 beamUV; void main(){ beamUV=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }',
+        fragmentShader: 'varying vec2 beamUV; void main(){ float a=.115*smoothstep(0.0,.13,beamUV.y)*(.48+.52*beamUV.y); gl_FragColor=vec4(.72,.84,1.0,a); }',
+        transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide,
+      }),
     );
     game.scene.add(this.beam);
     this.strobe = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(), color: 0xff2040, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false }));
@@ -335,6 +343,7 @@ export class Helicopter {
 
   update(dt, wanted) {
     const g = this.game;
+    this.leaving = !wanted;
     const p = g.player.position;
     const target = wanted ? new THREE.Vector3(p.x - 18, 34, p.z - 22) : new THREE.Vector3(p.x + 400, 90, p.z + 400);
     const d = target.clone().sub(this.pos);
@@ -349,11 +358,11 @@ export class Helicopter {
     this.sweep += dt;
     const aim = new THREE.Vector3(p.x + Math.sin(this.sweep * 1.3) * 3, 0, p.z + Math.cos(this.sweep) * 3);
     this.spot.target.position.copy(aim);
-    this.spot.intensity = wanted ? 260 : 0;
+    this.spot.intensity = wanted ? 560 : 0;
     const from = this.pos.clone().add(new THREE.Vector3(0, -1.2, 0));
     const len = from.distanceTo(aim);
     this.beam.position.copy(from);
-    this.beam.scale.set(1, len, 1);
+    this.beam.scale.set(len * 0.13, len, len * 0.13);
     this.beam.lookAt(aim);
     this.beam.rotateX(-Math.PI / 2);
     this.beam.visible = wanted;

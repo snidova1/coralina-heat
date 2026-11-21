@@ -25,6 +25,11 @@ import { AudioEngine } from './audio.js';
 import { SaveSystem } from './save.js';
 import { Menu } from './menu.js';
 import { runShot } from './shots.js';
+import { NeighborhoodServices } from './neighborhood-services.js';
+import { BayMap } from './bay-map.js';
+import { WeaponWheel } from './weapon-wheel.js';
+import { BurnerPhone } from './burner-phone.js';
+import { goldenHour, TITLE_COAST } from './shot-art.js';
 import { districtAt, PLACES } from './map.js';
 
 const params = new URLSearchParams(location.search);
@@ -72,6 +77,10 @@ game.minimap = new Minimap(game, game.hud.radarCanvas);
 game.audio = new AudioEngine(game);
 game.menu = new Menu(game, document.getElementById('menu'));
 game.input = shotName ? null : new Input(canvas);
+game.services = new NeighborhoodServices(game);
+game.chart = new BayMap(game);
+game.weaponWheel = new WeaponWheel(game);
+game.phone = new BurnerPhone(game);
 const grade = document.createElement('div');
 grade.className = 'grade';
 document.body.appendChild(grade);
@@ -139,14 +148,29 @@ game.applySettings = () => {
 
 game.startGame = (cont) => {
   const p = game.player;
+  game.missions.cleanup(false);
+  game.missions.active = null;
+  game.services.reset();
+  game.chart.waypoint = null;
+  game.respawnT = 0;
+  p.respawn(352, -150);
+  p.armor = 0;
+  p.weapons = { fists: { ammo: Infinity, clip: Infinity } };
+  p.current = 'fists';
+  p.reloadT = p.fireT = 0;
+  game.day.frozen = false;
+  game.day.uniforms.sunset.value = 0;
+  game.renderer.toneMappingExposure = 1.05;
+  game.applySettings();
   game.police.clearAll();
   game.wanted.setLevel(0);
+  game.day.setHour(17.6);
   if (cont && game.save.load()) {
     game.hud.toast('Welcome back to Coralina Bay.');
   } else {
+    for (const key of Object.keys(game.stats)) game.stats[key] = 0;
     game.stats.cash = 250;
     p.position.set(352, 0.16, -150);
-    game.day.setHour(17.6);
     game.missions.index = 0;
     game.hud.hint('~WASD~ move · ~Mouse~ look · ~F~ steal a car · ~Esc~ pause. Walk into the yellow marker to start a job.', 9);
   }
@@ -163,6 +187,8 @@ game.startGame = (cont) => {
 game.pause = () => {
   if (game.mode !== 'play') return;
   game.mode = 'paused';
+  game.weaponWheel.cancel();
+  if (document.pointerLockElement) document.exitPointerLock();
   game.menu.pause();
   if (game.audio.ctx) game.audio.ctx.suspend();
 };
@@ -179,6 +205,11 @@ game.toTitle = () => {
   game.mode = 'title';
   game.hud.show(false);
   game.cameraRig.mode = 'cinematic';
+  game.cameraRig.cine.t = 0;
+  goldenHour(game, [-0.44, 0.08, 0.89]);
+  game.day.hemi.intensity = 1.54;
+  game.cameraRig.cine.centre.set(374, 0, -255);
+  game.cameraRig.cine.pose = TITLE_COAST;
   game.menu.title();
   if (game.audio.ctx) game.audio.ctx.resume();
 };
@@ -193,6 +224,8 @@ game.step = (dt) => {
   game.vehicles.update(dt);
   game.pedestrians.update(dt);
   game.missions.update(dt);
+  game.services.update(dt);
+  if (game.chart.waypoint && p.position.distanceToSquared(game.chart.markerPosition.set(game.chart.waypoint.x, p.position.y, game.chart.waypoint.z)) < 36) game.chart.waypoint = null;
   game.pickups.update(dt);
   game.wanted.update(dt);
   game.effects.update(dt);
@@ -214,9 +247,9 @@ game.step = (dt) => {
   }
 };
 
-game.render = () => {
+game.render = (dt = 0) => {
   const focus = game.player.vehicle ? game.player.vehicle.position : game.player.position;
-  game.day.update(game.mode === 'play' ? 1 / 60 : 0, game.cameraRig.mode === 'cinematic' ? game.cameraRig.cine.centre : focus);
+  game.day.update(game.mode === 'play' ? dt : 0, game.cameraRig.mode === 'cinematic' ? game.cameraRig.cine.centre : focus);
   renderer.render(scene, camera);
 };
 
@@ -235,6 +268,8 @@ if (game.input) {
   });
   window.addEventListener('keydown', (e) => {
     if (e.code === 'Escape' && game.mode === 'paused') game.resume();
+    else if (e.code === 'KeyM' && !e.repeat && game.mode === 'play') { game.pause(); game.menu.chart(); }
+    else if (e.code === 'KeyC' && !e.repeat && game.mode === 'play') { game.pause(); game.menu.phone(); }
     else if ((e.code === 'Escape' || e.code === 'KeyP') && game.mode === 'play') game.pause();
   });
 }
@@ -262,7 +297,7 @@ function frame(now) {
     game.cameraRig.update(dt);
     game.audio.update();
   }
-  game.render();
+  game.render(dt);
   if (game.input) game.input.endFrame();
   requestAnimationFrame(frame);
 }

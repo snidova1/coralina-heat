@@ -62,11 +62,13 @@ export class Combat {
     aim.dir.y += (rand() - 0.5) * w.spread;
     aim.dir.z += (rand() - 0.5) * w.spread;
     aim.dir.normalize();
-    // start the trace at the player so the camera cannot shoot past cover
-    const start = aim.origin.clone().addScaledVector(aim.dir, g.cameraRig.dist * 0.9);
-    const hit = this.traceShot(start, aim.dir, w.range, p.vehicle);
     const muzzle = p.body.muzzlePosition(new THREE.Vector3());
-    g.effects.muzzleFlash(muzzle, aim.dir, 1.2);
+    // Aim down the reticle, then test the actual muzzle path so nearby cover blocks the shot.
+    const offset = Math.max(0, p.chestPos.sub(aim.origin).dot(aim.dir) - 0.15);
+    const target = this.traceShot(aim.origin.clone().addScaledVector(aim.dir, offset), aim.dir, w.range, p.vehicle);
+    const trajectory = target.point.clone().sub(muzzle).normalize();
+    const hit = this.traceShot(muzzle, trajectory, w.range, p.vehicle);
+    g.effects.muzzleFlash(muzzle, trajectory, 1.2);
     g.effects.tracer(muzzle, hit.point);
     if (g.audio) g.audio.gunshot(w.id === 'smg' ? 0.7 : 1);
     g.cameraRig.shake(0.08);

@@ -7,6 +7,7 @@ const X0 = -1060;
 const Z0 = -470;
 const W = 1600;
 const H = 1000;
+export const MAP_BOUNDS = { x: X0, z: Z0, w: W, h: H };
 
 function buildMapImage(city) {
   const c = document.createElement('canvas');
@@ -94,11 +95,18 @@ export class Minimap {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     // wanted: the radar flashes red and blue
     if (g.wanted.level > 0) {
-      ctx.fillStyle = Math.floor(g.time * 4) % 2 ? 'rgba(255,40,60,0.16)' : 'rgba(40,90,255,0.16)';
-      ctx.fillRect(0, 0, S, S);
+      const { x,z } = g.wanted.lastKnown;
+      const [sx,sy] = toScreen(x,z);
+      ctx.strokeStyle = g.wanted.searching ? '#ffe5a8bd' : '#ff848b91';
+      ctx.fillStyle = g.wanted.searching ? '#ffd57a26' : '#e7677725';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.arc(sx,sy,g.wanted.searchRadius * s,0,Math.PI * 2); ctx.fill();
+      ctx.setLineDash([6,5]); ctx.stroke(); ctx.setLineDash([]);
     }
     // GPS line toward the target
-    const target = g.missions ? g.missions.targetPoint : null;
+    const waypoint = g.chart?.waypoint;
+    const dispatch = g.services?.target;
+    const target = waypoint || dispatch || g.missions?.targetPoint;
     const blips = [];
     if (g.missions) blips.push(...g.missions.blips());
     if (g.police) {
@@ -108,6 +116,8 @@ export class Minimap {
     }
     if (g.pickups) for (const k of g.pickups.list) if (!k.taken) blips.push({ x: k.x, z: k.z, kind: k.kind, small: true });
     blips.push({ x: PLACES.safehouse.x, z: PLACES.safehouse.z, kind: 'home' });
+    if (g.mode === 'play') for (const site of g.services.sites) if (site.key !== 'motel') blips.push({ ...site, kind: 'service' });
+    if (waypoint || dispatch) blips.push({ ...target, kind: 'waypoint' });
     ctx.restore();
     if (target) {
       const [tx, ty] = toScreen(target.x, target.z);
@@ -115,12 +125,14 @@ export class Minimap {
       ctx.beginPath();
       ctx.arc(cx, cy, R, 0, Math.PI * 2);
       ctx.clip();
-      ctx.strokeStyle = 'rgba(255,210,63,0.85)';
+      ctx.strokeStyle = waypoint ? '#e9aaff' : dispatch ? '#8affdf' : 'rgba(255,210,63,0.85)';
       ctx.lineWidth = 3;
       ctx.setLineDash([6, 5]);
       ctx.beginPath();
       ctx.moveTo(cx, cy);
-      ctx.lineTo(tx, ty);
+      const route = waypoint ? g.chart.route(p.position, target) : null;
+      if (route) for (const q of route.slice(1)) ctx.lineTo(...toScreen(q.x, q.z));
+      else ctx.lineTo(tx, ty);
       ctx.stroke();
       ctx.restore();
     }
@@ -129,7 +141,7 @@ export class Minimap {
       const dx = bx - cx;
       const dy = by - cy;
       const d = Math.hypot(dx, dy);
-      const edge = b.kind === 'objective' || b.kind === 'contact' || b.kind === 'home' || b.kind === 'vehicle';
+      const edge = b.kind === 'objective' || b.kind === 'contact' || b.kind === 'home' || b.kind === 'vehicle' || b.kind === 'waypoint';
       if (d > R - 8) {
         if (!edge) continue;
         bx = cx + (dx / d) * (R - 8);
@@ -228,6 +240,12 @@ export class Minimap {
         ctx.fillText(b.kind === 'home' ? 'H' : b.label || '!', 0, 1);
         break;
       }
+      case 'service':
+      case 'waypoint':
+        ctx.fillStyle = b.kind === 'service' ? '#a7efe0' : '#efadff';
+        ctx.font = 'bold 15px Segoe UI'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.strokeText(b.icon || '◆', 0, 0); ctx.fillText(b.icon || '◆', 0, 0);
+        break;
       case 'cash':
         ctx.fillStyle = '#5fe07a';
         ctx.font = 'bold 13px "Arial Black", sans-serif';
