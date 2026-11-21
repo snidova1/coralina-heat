@@ -138,7 +138,9 @@ export function facadeTextures(style) {
     }
   } else if (style.startsWith('shop')) {
     // three storefronts per tile: sign band, striped awning, lit shop window and a door
-    const names = ['CAFÉ SOL', 'BODEGA', 'SURF SHOP', 'PIZZA', 'TATTOO', 'LAUNDRY', 'CUBANITO', 'PAWN', 'NAILS', 'LIQUOR', 'TACOS', 'GYM'];
+    const names = ['CAFÉ SOL', 'PALMETTO', 'SALT & RYE', 'EL MIRADOR', 'TERRAZA', 'QUICK WASH', 'CUBANITO', 'CRESCENT', 'MARISOL', 'MOTEL BAR', 'PÁJARO', 'BAYWAVE'];
+    const sublines = ['ESPRESSO · BAKERY', 'MOTOR WORKS', 'LUNCH COUNTER', 'RECORDS & AUDIO', 'OPEN LATE', 'DROP OFF · PICK UP', 'EAT IN · TAKE OUT', 'OUTFITTERS', 'FLORIST', 'COCKTAIL LOUNGE', 'TACOS & LIME', '98.4 FM'];
+    const row = Number(style.slice(4)) % 4;
     const awnings = [['#e63946', '#fff'], ['#2a9d8f', '#fff'], ['#ffb703', '#fff'], ['#3a86ff', '#fff'], ['#ff5fa2', '#fff'], ['#222', '#ffd23f']];
     d.fillStyle = '#e8e0d2';
     d.fillRect(0, 0, S, S);
@@ -151,15 +153,19 @@ export function facadeTextures(style) {
       d.font = 'bold 44px "Arial Black", Impact, sans-serif';
       d.textAlign = 'center';
       d.textBaseline = 'middle';
-      const name = names[Math.floor(rnd() * names.length)];
+      const index = row * 3 + k;
+      const name = names[index];
       const signCol = ['#ffd23f', '#7ff6ff', '#ff7ab8', '#ffffff'][Math.floor(rnd() * 4)];
       d.fillStyle = signCol;
-      d.fillText(name, x + sw / 2, 56, sw - 30);
+      d.fillText(name, x + sw / 2, 44, sw - 24);
       l.fillStyle = signCol;
       l.font = d.font;
       l.textAlign = 'center';
       l.textBaseline = 'middle';
-      l.fillText(name, x + sw / 2, 56, sw - 30);
+      l.fillText(name, x + sw / 2, 44, sw - 24);
+      d.font = 'bold 12px Segoe UI';
+      d.fillStyle = '#dfcfb6';
+      d.fillText(sublines[index], x + sw / 2, 73, sw - 20);
       for (let s = 0; s < 8; s++) {
         d.fillStyle = s % 2 ? a1 : a2;
         d.fillRect(x + 6 + (s * (sw - 12)) / 8, 96, (sw - 12) / 8 + 1, 60);
@@ -175,12 +181,37 @@ export function facadeTextures(style) {
       d.globalAlpha = 0.35;
       d.fillRect(x + 18, 250, sw * 0.5, S - 290);
       d.globalAlpha = 1;
-      l.fillStyle = '#ffd59a';
+      l.fillStyle = '#886245';
       l.fillRect(x + 12, 170, sw * 0.58, S - 200);
+      for (let shelf = 0; shelf < 3; shelf++) {
+        const y = 305 + 48 * shelf;
+        for (let jar = 0; jar < 7; jar++) {
+          const h = 9 + rnd() * 20;
+          d.fillStyle = ['#77613e', '#985c4e', '#3d8b83', '#c4a577'][(jar + shelf + index) % 4];
+          d.fillRect(x + 19 + jar * 12, y - h, 7 + rnd() * 4, h);
+        }
+        d.fillStyle = '#383132';
+        d.fillRect(x + 14, y, sw * 0.55, 5);
+        l.fillStyle = '#523924';
+        l.fillRect(x + 14, y, sw * 0.55, 5);
+      }
+      for (const dx of [14, 61, 108]) {
+        d.fillStyle = '#2d3637';
+        d.fillRect(x + dx, 171, 3, 311);
+        l.fillStyle = '#100a09';
+        l.fillRect(x + dx, 171, 3, 311);
+      }
+      d.fillStyle = '#e8d4aeaa';
+      d.fillRect(x + 22, 195, 25, 14);
+      d.font = 'bold 8px Segoe UI';
+      d.fillStyle = '#514238';
+      d.fillText('OPEN', x + 34, 202, 23);
       d.fillStyle = '#2b2b2b';
       d.fillRect(x + sw * 0.66, 190, sw * 0.26, S - 190);
-      d.fillStyle = '#a8c8d8';
+      d.fillStyle = '#527482';
       d.fillRect(x + sw * 0.69, 210, sw * 0.2, 120);
+      d.fillStyle = '#d8be91';
+      d.fillRect(x + sw * 0.69, 342, 11, 4);
       d.fillStyle = '#9a9184';
       d.fillRect(x, S - 30, sw, 30);
     }

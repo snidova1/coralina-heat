@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 import { GeometryBucket } from './geometry.js';
 import { surfaceTexture } from './textures.js';
+import { addRoadHardware, shadeAsphalt } from './street-surfaces.js';
 import { LINES, LINE_MIN, LINE_MAX, STEP, ROAD_HALF, WALK, BRIDGE, CANAL, BOULEVARD_X, BEACH } from './map.js';
 
 const ROAD_Y = 0.02;
@@ -87,6 +88,7 @@ export class Roads {
     this.slab(pavement, BOULEVARD_X + ROAD_HALF, CANAL.zMax, BEACH.x0, LINE_MAX + ROAD_HALF + 25, false);
 
     const asphaltMat = new THREE.MeshStandardMaterial({ map: surfaceTexture('asphalt'), roughness: 0.82, color: 0xb9b6b8 });
+    shadeAsphalt(asphaltMat);
     const road = new THREE.Mesh(asphalt.build(), asphaltMat);
     road.receiveShadow = true;
     const white = new THREE.Mesh(paintW.build(), new THREE.MeshStandardMaterial({ color: 0xf2efe6, roughness: 0.6 }));
@@ -95,6 +97,7 @@ export class Roads {
     const pave = new THREE.Mesh(pavement.build(), new THREE.MeshStandardMaterial({ map: surfaceTexture('pavement'), roughness: 0.9 }));
     pave.receiveShadow = true;
     this.scene.add(road, white, yellow, pave);
+    addRoadHardware(this.scene);
     this.buildLamps();
   }
 

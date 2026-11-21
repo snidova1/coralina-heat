@@ -94,6 +94,7 @@ export class DayCycle {
       night: { value: 0 },
       sunset: { value: 0 },
     };
+    game.city.waterMat.userData.setCoastSky(this.uniforms);
     const skyMat = new THREE.ShaderMaterial({
       uniforms: this.uniforms, vertexShader: SKY_VERT, fragmentShader: SKY_FRAG, side: THREE.BackSide, depthWrite: false, fog: false,
     });

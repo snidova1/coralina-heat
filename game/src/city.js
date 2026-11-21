@@ -6,6 +6,10 @@ import { instanceProps, hasModel } from './assets.js';
 import { GeometryBucket } from './geometry.js';
 import { facadeTextures, surfaceTexture, waterNormals, neonSignTexture, decalTexture, glowTexture } from './textures.js';
 import { makeStream } from './rng.js';
+import { facadeAtlas, facadeWall } from './facades.js';
+import { shadeSand, shadeWater } from './coastal-materials.js';
+import { buildWaterfront } from './waterfront.js';
+import { ArchitecturalDetails } from './architectural-details.js';
 import {
   LINES, LINE_MIN, LINE_MAX, ROAD_HALF, ISLAND, BEACH, CANAL, BRIDGE, BOULEVARD_X, SEA_LEVEL, PLACES,
 } from './map.js';
@@ -38,6 +42,7 @@ export class City {
     this.facadeMaterials = [];
     this.buckets = new Map();
     this.roofBucket = new GeometryBucket();
+    this.architecture = new ArchitecturalDetails();
     this.trimBucket = new GeometryBucket();
     this.palms = [];
     this.signs = [];
@@ -52,6 +57,8 @@ export class City {
     this.buildMainland();
     this.buildStreetFurniture();
     this.flushBuildings();
+    this.architecture.mount(scene);
+    buildWaterfront(this);
     this.buildPalms();
     this.buildAssetPlazas();
   }
@@ -70,6 +77,7 @@ export class City {
       walls.boxSides((x0 + x1) / 2, (z0 + z1) / 2, x1 - x0, z1 - z0, -7, 0, 6, 6);
     }
     const sand = new THREE.MeshStandardMaterial({ map: surfaceTexture('sand'), roughness: 1 });
+    shadeSand(sand);
     const stone = new THREE.MeshStandardMaterial({ map: surfaceTexture('stone'), roughness: 0.95 });
     const a = new THREE.Mesh(top.build(), sand);
     const b = new THREE.Mesh(walls.build(), stone);
@@ -85,6 +93,7 @@ export class City {
     this.waterMat = new THREE.MeshStandardMaterial({
       color: 0x0f6a82, roughness: 0.05, metalness: 0.2, normalMap: normals, normalScale: new THREE.Vector2(0.2, 0.2),
     });
+    this.waterClock = shadeWater(this.waterMat, this.scene);
     const ocean = new THREE.Mesh(new THREE.PlaneGeometry(9000, 9000), this.waterMat);
     ocean.rotation.x = -Math.PI / 2;
     ocean.position.y = SEA_LEVEL;
@@ -181,13 +190,16 @@ export class City {
 
   /** A building: facade walls in its style's bucket, a roof with parapet and rooftop clutter, a collider. */
   addBuilding(x, z, w, d, h, style, tint, opts = {}) {
-    const tile = style === 'glass' ? [12, 14] : style === 'warehouse' ? [16, 14] : [14, 14];
     const b = this.facadeBucket(style, tint);
     if (opts.shops && h > 7) {
-      this.facadeBucket('shop' + Math.floor(this.rnd() * 4), 0xffffff).boxSides(x, z, w, d, 0.1, 4.6, 16, 4.5);
+      const variant = Math.floor(this.rnd() * 4);
+      const shop = 'shop' + variant;
+      facadeWall(this.facadeBucket(shop, 0xffffff), x, z, w, d, 0.1, 4.6, shop);
+      if (Math.abs(x - 40) < 70 && Math.abs(z + 150) < 100 || x > 315) this.architecture.storefront(x, z, w, d, variant);
       this.trimBucket.box(x, 4.75, z, w + 0.5, 0.3, d + 0.5, 2);
-      b.boxSides(x, z, w, d, 4.6, h, tile[0], tile[1], undefined, 4.6 / tile[1]);
-    } else b.boxSides(x, z, w, d, 0.1, h, tile[0], tile[1]);
+      facadeWall(b, x, z, w, d, 4.6, h, style);
+    } else if (style === 'warehouse') b.boxSides(x, z, w, d, 0.1, h, 16, 14);
+    else facadeWall(b, x, z, w, d, 0.1, h, style);
     this.roofBucket.flat(x - w / 2, z - d / 2, x + w / 2, z + d / 2, h, 6);
     if (!opts.noParapet) {
       const p = 0.35;
@@ -218,7 +230,7 @@ export class City {
     for (let t = 0; t < tiers; t++) {
       const th = (h - 9) / tiers;
       const b = this.facadeBucket(style, tint);
-      b.boxSides(x, z, tw, td, y, y + th, style === 'glass' ? 12 : 14, 14, undefined, y / 14);
+      facadeWall(b, x, z, tw, td, y, y + th, style);
       this.roofBucket.flat(x - tw / 2, z - td / 2, x + tw / 2, z + td / 2, y + th, 6);
       this.trimBucket.box(x, y + th + 0.4, z, tw + 0.6, 0.8, td + 0.6, 2);
       y += th;
@@ -285,7 +297,7 @@ export class City {
     let y = 10;
     let w = W * 0.55;
     for (const th of [70, 60, 40]) {
-      this.facadeBucket('glass', 0xffd9f0).boxSides(cx, cz, w, w, y, y + th, 12, 14, undefined, y / 14);
+      facadeWall(this.facadeBucket('glass', 0xffd9f0), cx, cz, w, w, y, y + th, 'glass');
       this.trimBucket.box(cx, y + th + 0.5, cz, w + 1, 1, w + 1, 2);
       y += th;
       w *= 0.78;
@@ -340,6 +352,7 @@ export class City {
       const tint = PASTELS[Math.floor(this.rnd() * PASTELS.length)];
       const motel = this.rnd() < 0.5;
       this.addBuilding(bx, lz, depth, D / lots - 4, h, motel ? 'motel' : 'stucco', tint, { shops: !motel });
+      this.architecture.balconies(x1, lz, D / lots - 5, h);
       // deco fins and a coloured band
       this.trimBucket.box(x1 + 0.3, h * 0.5, lz, 0.6, h * 0.9, 1.2, 2);
       this.trimBucket.box(x1 + 0.2, h + 1.2, lz, 0.8, 2.4, D / lots - 8, 2);
@@ -385,7 +398,7 @@ export class City {
 
   flushBuildings() {
     for (const { style, tint, bucket } of this.buckets.values()) {
-      const tex = facadeTextures(style);
+      const tex = style === 'warehouse' || style.startsWith('shop') ? facadeTextures(style) : facadeAtlas(style);
       const glass = style === 'glass';
       if (style.startsWith('shop')) {
         const shop = new THREE.MeshStandardMaterial({ map: tex.map, emissiveMap: tex.lit, emissive: 0xffffff, emissiveIntensity: 0.25, roughness: 0.6 });
@@ -396,8 +409,9 @@ export class City {
         continue;
       }
       const mat = new THREE.MeshStandardMaterial({
-        map: tex.map, color: new THREE.Color(tint).lerp(new THREE.Color(0xffffff), 0.65), emissiveMap: tex.lit, emissive: tex.lit ? 0xffffff : 0x000000, emissiveIntensity: 0.05,
-        roughness: glass ? 0.12 : 0.85, metalness: glass ? 0.55 : 0,
+        map: tex.map, bumpMap: tex.bump ?? null, bumpScale: 0.037, roughnessMap: tex.rough ?? null,
+        color: new THREE.Color(tint).lerp(new THREE.Color(0xffffff), 0.48), emissiveMap: tex.lit, emissive: 0xffffff, emissiveIntensity: 0.05,
+        roughness: glass ? 0.71 : 0.93, metalness: glass ? 0.38 : 0.06,
       });
       this.facadeMaterials.push(mat);
       const mesh = new THREE.Mesh(bucket.build(), mat);
@@ -405,7 +419,7 @@ export class City {
       mesh.receiveShadow = true;
       this.scene.add(mesh);
     }
-    const roof = new THREE.Mesh(this.roofBucket.build(), new THREE.MeshStandardMaterial({ color: 0x8d8a86, roughness: 0.95 }));
+    const roof = new THREE.Mesh(this.roofBucket.build(), new THREE.MeshStandardMaterial({ color: 0xa09a94, map: surfaceTexture('stone'), roughness: 0.95 }));
     const trim = new THREE.Mesh(this.trimBucket.build(), new THREE.MeshStandardMaterial({ color: 0xf4efe8, roughness: 0.7 }));
     roof.castShadow = roof.receiveShadow = trim.castShadow = trim.receiveShadow = true;
     this.scene.add(roof, trim);
@@ -657,7 +671,7 @@ export class City {
     for (let x = LINE_MIN; x < LINE_MAX; x += 22) {
       this.palms.push([x + 11, LINE_MAX + ROAD_HALF + 3, 0.9 + this.rnd() * 0.3]);
     }
-    if (instanceProps(this.scene, 'prop_palm', this.palms.map((p) => [p[0], p[0] > BEACH.x0 ? this.beachHeight(p[0]) : 0.16, p[1], p[2], this.rnd() * Math.PI * 2]), 9)) {
+    if (instanceProps(this.scene, 'prop_palm', this.palms.map((p) => [p[0], p[3] ?? (p[0] > BEACH.x0 ? this.beachHeight(p[0]) : 0.16), p[1], p[2], this.rnd() * Math.PI * 2]), 9)) {
       for (const p of this.palms) this.addCollider(p[0] - 0.22, p[1] - 0.22, p[0] + 0.22, p[1] + 0.22, 8, 'palm');
       return;
     }
@@ -670,7 +684,7 @@ export class City {
     groups.forEach((list, v) => {
       const im = new THREE.InstancedMesh(variants[v], mat, list.length);
       list.forEach((p, k) => {
-        const y = p[0] > BEACH.x0 ? this.beachHeight(p[0]) : 0.15;
+        const y = p[3] ?? (p[0] > BEACH.x0 ? this.beachHeight(p[0]) : 0.15);
         q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), this.rnd() * Math.PI * 2);
         m.compose(new THREE.Vector3(p[0], y, p[1]), q, new THREE.Vector3(p[2], p[2], p[2]));
         im.setMatrixAt(k, m);
@@ -694,6 +708,7 @@ export class City {
   // ---------- per-frame and queries ----------
 
   update(dt, time) {
+    this.waterClock.value = time;
     this.waterMat.normalMap.offset.set(time * 0.004, time * 0.0025);
     for (const b of this.boats) b.obj.position.y = b.base + Math.sin(time * 1.2 + b.phase) * 0.12;
     for (const s of this.signs) {
