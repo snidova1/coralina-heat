@@ -68,7 +68,8 @@ const SCENES = {
     heli.spot.angle = .074;
     heli.beam.material.opacity = .047;
     heli.update(0, true);
-    heli.spot.intensity = 100;
+    // Keep the in-air searchlight; its grazing footprint was detached from the visible cone.
+    heli.spot.intensity = 0;
     heli.rotor.rotation.y = .46;
     dressDrift(game, hero, cops);
     coastBackdrop(game);
@@ -77,8 +78,7 @@ const SCENES = {
   },
 
   street(game) {
-    goldenHour(game, [0.72, 0.19, 0.66]);
-    game.day.hemi.intensity = 1.19;
+    goldenHour(game, [0.72, 0.24, 0.66], true);
     game.stats.cash = 12780;
     const car = game.vehicles.spawn('sports', 43.6, -129, Math.PI, 0xff2d3c);
     openDriverDoor(game, car);
@@ -104,13 +104,14 @@ const SCENES = {
     game.vehicles.spawn('sedan', 36.4, -184, 0);
     game.hud.setObjective('Hot Wheels', 'Steal Ocho’s ~Vortice GT~.');
     game.hud.subtitle(CAST.vera.name, CAST.vera.color, 'That’s the Vortice. Don’t let it get away.', 4);
-    camera(game, [49.8, 1.83, -125.56, 44.85, 1.28, -130.2], 49);
-    game.hud.interact('Take the Vortice GT', 'F');
+    camera(game, [49.35, 1.86, -125.34, 44.51, 1.29, -129.95], 49);
   },
 
   mission(game) {
     goldenHour(game, [0.79, 0.10, 0.60]);
+    game.day.hemi.color.set(0xdbd9c8);
     dressMarina(game);
+    game.vehicles.spawn('pickup', 152.4, 380.8, -Math.PI / 2, 0x385b64);
     game.stats.cash = 71400;
     const p = game.player;
     p.position.set(143.75, 0.16, 386.37);
@@ -139,6 +140,7 @@ const SCENES = {
       e.body.bank = i === 2 ? .21 : 0;
       if (i === 3 || i === 5) { e.body.pose = 'move'; e.body.speed = 5.6; e.body.root.rotation.y += i === 3 ? -1.02 : .78; }
       e.body.setArmed(true);
+      e.tag.scale.setScalar(.72);
       if (i === 4) e.damage(500, 'player');
       e.body.update(i === 4 ? 0.5 : i === 3 || i === 5 ? .27 : 0);
     });
@@ -159,10 +161,12 @@ const SCENES = {
   },
 
   title(game) {
-    goldenHour(game, [-0.44, 0.08, 0.89]);
+    goldenHour(game, [-0.44, 0.08, 0.89], true);
+    game.city.beachWalk.setNight(.89);
     lightOceanDrive(game);
     game.player.position.set(368, 0, -236);
     game.player.body.root.visible = false;
+    for (const item of game.pickups.list) item.group.visible = false;
     game.menu.title();
     camera(game, [460, 15.6, -346, 394, 8.6, -225], 54);
   },

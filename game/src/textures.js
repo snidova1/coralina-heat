@@ -47,45 +47,59 @@ export function facadeTextures(style) {
   const cw = S / cols;
   const rh = S / rows;
   const warm = ['#ffd59a', '#ffe7b8', '#ffc27a', '#fff1d0', '#9fd8ff'];
-  if (style === 'glass') {
-    const g = d.createLinearGradient(0, 0, S, S);
-    g.addColorStop(0, '#3d6f86');
-    g.addColorStop(0.5, '#6aa6bd');
-    g.addColorStop(1, '#2f5a73');
-    d.fillStyle = g;
+  if (style === 'glass' || style === 'office') {
+    const glass = style === 'glass';
+    const finishMap = canvas(S, S);
+    const f = finishMap.getContext('2d');
+    f.fillStyle = '#e4e43c';  // G: roughness, B: metalness
+    f.fillRect(0, 0, S, S);
+    d.fillStyle = glass ? '#617074' : '#b8ab98';
     d.fillRect(0, 0, S, S);
-    for (let r = 0; r < rows; r++) {
-      for (let c = 0; c < cols; c++) {
-        const shade = 0.75 + rnd() * 0.5;
-        d.fillStyle = `rgba(${Math.floor(120 * shade)},${Math.floor(190 * shade)},${Math.floor(215 * shade)},0.55)`;
-        d.fillRect(c * cw + 3, r * rh + 4, cw - 6, rh - 8);
-        if (rnd() < 0.35) {
-          l.fillStyle = warm[Math.floor(rnd() * warm.length)];
-          l.fillRect(c * cw + 3, r * rh + 4, cw - 6, rh - 8);
+    if (!glass) noise(d, S, S, 6200, rnd, .12);
+    const cell = S / 8;
+    for (let row = 0; row < 8; row++) {
+      for (let col = 0; col < 8; col++) {
+        const x = col * cell, y = row * cell;
+        const inset = glass ? 3 : 8;
+        const top = y + (glass ? 4 : 9), bottom = y + (glass ? 55 : 49);
+        const w = cell - inset * 2, h = bottom - top;
+        d.fillStyle = glass ? '#3f4e52' : '#81766b';
+        d.fillRect(x + inset - 1, top - 2, w + 2, h + 4);
+        const reflected = d.createLinearGradient(0, top, 0, bottom);
+        reflected.addColorStop(0, glass ? '#8ba7b0' : '#7e959d');
+        reflected.addColorStop(.42, '#6d8994');
+        reflected.addColorStop(1, '#455e6c');
+        d.fillStyle = reflected;
+        d.fillRect(x + inset, top, w, h);
+        d.fillStyle = `rgba(209,224,217,${rnd() * .07})`;
+        d.fillRect(x + inset, top, w, h);
+        f.fillStyle = `rgb(0,${37 + Math.floor(rnd() * 19)},${glass ? 219 : 157})`;
+        f.fillRect(x + inset, top, w, h);
+        // The lit variant keeps the sill and mullions dark, with a ceiling strip, blinds and silhouettes.
+        const interior = l.createLinearGradient(0, top, 0, bottom);
+        interior.addColorStop(0, '#ba8b61');
+        interior.addColorStop(.20, '#d9ab76');
+        interior.addColorStop(.74, '#956844');
+        interior.addColorStop(1, '#543725');
+        l.fillStyle = interior;
+        l.fillRect(x + inset, top, w, h);
+        l.fillStyle = '#ffd4a5';
+        l.fillRect(x + inset + 6, top + 3, w - 12, 2);
+        l.fillStyle = '#6c543d';
+        l.fillRect(x + inset + 3, bottom - 10, w * .38, 10);
+        l.fillRect(x + cell - inset - 9, bottom - 16, 5, 16);
+        for (let j = 13; j < h - 7; j += 4) l.fillRect(x + cell / 2 + 3, top + j, w * .40, 1);
+        for (const ctx of [d, l, f]) {
+          ctx.fillStyle = ctx === d ? '#556467' : ctx === l ? '#000' : '#e4e43c';
+          ctx.fillRect(x + cell / 2 - 1, top, 2, h);
         }
+        d.fillStyle = glass ? '#798986' : '#cabb9f';
+        d.fillRect(x + inset - 1, bottom + 1, w + 2, 2);
       }
     }
-    d.fillStyle = '#1b2a33';
-    for (let r = 0; r <= rows; r++) d.fillRect(0, r * rh - 4, S, 8);
-    for (let c = 0; c <= cols; c++) d.fillRect(c * cw - 2, 0, 4, S);
-  } else if (style === 'office') {
-    d.fillStyle = '#d9d2c4';
-    d.fillRect(0, 0, S, S);
-    noise(d, S, S, 4000, rnd);
-    for (let r = 0; r < rows; r++) {
-      d.fillStyle = '#2c4656';
-      d.fillRect(0, r * rh + rh * 0.3, S, rh * 0.5);
-      d.fillStyle = 'rgba(160,210,230,0.35)';
-      d.fillRect(0, r * rh + rh * 0.3, S, rh * 0.12);
-      for (let c = 0; c < cols * 2; c++) {
-        d.fillStyle = '#18242c';
-        d.fillRect(c * (S / 8), r * rh + rh * 0.3, 3, rh * 0.5);
-        if (rnd() < 0.4) {
-          l.fillStyle = warm[Math.floor(rnd() * warm.length)];
-          l.fillRect(c * (S / 8) + 3, r * rh + rh * 0.3, S / 8 - 3, rh * 0.5);
-        }
-      }
-    }
+    const result = { map: finish(day), lit: finish(lit), surface: finish(finishMap, { color: false }) };
+    cache.set('facade-' + style, result);
+    return result;
   } else if (style === 'stucco' || style === 'motel') {
     d.fillStyle = '#f4efe6';
     d.fillRect(0, 0, S, S);
@@ -179,8 +193,11 @@ export function facadeTextures(style) {
       d.fillStyle = '#26343c';
       d.fillRect(x + 56, 169, 4, 304);
       d.fillRect(x + 12, 365, 99, 5);
-      l.fillStyle = '#ffd59a';
-      l.fillRect(x + 12, 170, sw * 0.58, S - 200);
+      l.fillStyle = '#a37850';
+      l.fillRect(x + 15, 176, sw * 0.54, 7);
+      l.fillStyle = 'rgba(165,114,74,0.44)';
+      l.fillRect(x + 15, 247, sw * 0.54, 113);
+      l.fillRect(x + 15, 371, sw * 0.54, 94);
       d.fillStyle = '#2b2b2b';
       d.fillRect(x + sw * 0.66, 190, sw * 0.26, S - 190);
       d.fillStyle = '#a8c8d8';
@@ -189,15 +206,32 @@ export function facadeTextures(style) {
       d.fillRect(x, S - 30, sw, 30);
     }
   } else if (style === 'warehouse') {
-    d.fillStyle = '#b8b3a8';
+    const siding = d.createLinearGradient(0, 0, 0, S);
+    siding.addColorStop(0, '#a8b0ab');
+    siding.addColorStop(.48, '#bec0b3');
+    siding.addColorStop(.85, '#a39e8e');
+    siding.addColorStop(1, '#8a8173');
+    d.fillStyle = siding;
     d.fillRect(0, 0, S, S);
-    for (let x = 0; x < S; x += 8) {
-      d.fillStyle = x % 16 ? 'rgba(0,0,0,0.12)' : 'rgba(255,255,255,0.12)';
-      d.fillRect(x, 0, 4, S);
+    for (let x = 0; x < S; x += 32) {
+      d.fillStyle = `rgba(27,38,35,${rnd() * .14})`;
+      d.fillRect(x, 0, 32, S);
     }
-    noise(d, S, S, 5000, rnd, 0.1);
-    d.fillStyle = 'rgba(120,60,30,0.25)';
-    for (let i = 0; i < 30; i++) d.fillRect(rnd() * S, rnd() * S, 3, 20 + rnd() * 60);
+    for (let x = 0; x < S; x += 8) {
+      d.fillStyle = 'rgba(255,249,228,.20)';
+      d.fillRect(x + 1, 0, 2, S);
+      d.fillStyle = 'rgba(31,44,42,.27)';
+      d.fillRect(x + 5, 0, 2, S);
+    }
+    for (let i = 0; i < 68; i++) {
+      const x = rnd() * S, y = rnd() * S, h = 9 + rnd() * 110;
+      const streak = d.createLinearGradient(0, y, 0, y + h);
+      streak.addColorStop(0, 'rgba(106,64,36,.27)');
+      streak.addColorStop(1, 'rgba(106,64,36,0)');
+      d.fillStyle = streak;
+      d.fillRect(x, y, 1 + rnd() * 7, h);
+    }
+    noise(d, S, S, 7000, rnd, .12);
   }
   const result = { map: finish(day), lit: finish(lit) };
   cache.set('facade-' + style, result);

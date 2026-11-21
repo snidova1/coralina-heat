@@ -41,14 +41,14 @@ export class GeometryBucket {
   }
 
   /** The four walls of a block footprint, the texture wrapping continuously round the corners. */
-  boxSides(cx, cz, w, d, y0, y1, tileW, tileH, col, vOffset = 0) {
+  boxSides(cx, cz, w, d, y0, y1, tileW, tileH, col, vOffset = 0, uOffset = 0) {
     const x0 = cx - w / 2;
     const x1 = cx + w / 2;
     const z0 = cz - d / 2;
     const z1 = cz + d / 2;
     const v0 = vOffset;
     const v1 = vOffset + (y1 - y0) / tileH;
-    let u = 0;
+    let u = uOffset;
     const faces = [
       [x1, z1, x1, z0, d],
       [x1, z0, x0, z0, w],

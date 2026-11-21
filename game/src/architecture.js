@@ -33,8 +33,34 @@ export class Architecture {
       const put = (u, y, p, a, b, c, tint) => this.put(solid, face, u, y, p, a, b, c, tint);
       const rail = (u, y, p, a, b, c) => this.put(fittings, face, u, y, p, a, b, c, 0x31434a);
       if (style === 'warehouse') {
-        // Corrugated siding takes real shadow from the structural ribs.
-        for (let u = -span/2+.15; u < span/2; u += 3.2) put(u, h*.5, .07, .11, h-.36, .16, 0x777f79);
+        const bays = Math.max(1, Math.round(span / 7.8));
+        const pitch = span / bays;
+        put(0, .65, .06, span, 1.1, .19, 0x737676);
+        put(0, h - .14, .16, span + .20, .26, .38, 0x43525a);
+        for (let i = 0; i < bays; i++) {
+          const u = (i + .5 - bays / 2) * pitch;
+          const w = Math.min(pitch * .76, 4.3);
+          put(u - pitch / 2 + .10, h / 2, .12, .17, h - .25, .24, 0x677174);
+          if (face.nz && i % 2 === 0) {
+            put(u, 1.84, .16, w + .35, 3.5, .21, 0x414b4e);
+            for (let slat = 0; slat < 16; slat++) {
+              put(u, .29 + slat * .195, .29, w, .182, .11, slat % 4 === 0 ? 0x708080 : 0x637272);
+            }
+            put(u, 3.69, .53, w + .78, .16, 1.14, 0x3b5155);
+            put(u, 3.62, .99, w + .78, .12, .16, 0x637779);
+            put(u, 3.53, .65, w * .66, .046, .09, 0xd3b885);
+            put(u, .22, .40, w + .30, .20, .52, 0x85817b);
+            for (const s of [-1, 1]) put(u + s * (w * .5 + .08), 1.79, .33, .105, 3.34, .12, 0x485f62);
+            for (const s of [-1, 1]) put(u + s * (w / 2 + .31), .65, .37, .13, .98, .21, 0xba8a42);
+          } else {
+            put(u, 1.23, .14, Math.min(w, 1.03), 2.19, .20, 0x4c6064);
+            put(u + .28, 1.16, .25, .13, .047, .067, 0xc0a883);
+          }
+          put(u, h * .70, .13, w, .93, .24, 0x405961);
+          put(u, h * .70 + .27, .26, w - .12, .26, .02, 0x628088);
+          for (let j = -1; j <= 1; j++) rail(u + j * w / 4, h * .70, .26, .061, .95, .08);
+          rail(u, h * .70 - .05, .27, w, .046, .06);
+        }
         continue;
       }
       put(0, .47, .035, span, .69, .14, color);

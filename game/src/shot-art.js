@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { glowTexture } from './textures.js';
 import { ISLAND, SEA_LEVEL } from './map.js';
 
-export function goldenHour(game, direction) {
+export function goldenHour(game, direction, warm = false) {
   const d = game.day;
   d.setHour(19.25);
   d.frozen = true;
@@ -21,8 +21,62 @@ export function goldenHour(game, direction) {
   game.renderer.toneMappingExposure = 0.92;
   game.scene.fog.color.set(0x89536e);
   game.scene.fog.density = 0.00071;
+  if (warm) {
+    d.uniforms.sunset.value = 0;
+    d.uniforms.night.value = 0; // Keep stars out of the still-sunlit sky.
+    d.uniforms.topColor.value.set(0x6b8ba5);
+    d.uniforms.horizonColor.value.set(0xf8b47f);
+    d.sun.color.set(0xffd0a0);
+    d.hemi.color.set(0xf1e5d2);
+    d.hemi.groundColor.set(0xb99d83);
+    d.hemi.intensity = 1.22;
+    game.scene.fog.color.set(0xbd8f73);
+  }
   d.bakeEnvironment();
   game.scene.environmentIntensity = 0.44;
+}
+
+function reflectSiren(scene, source, tint, strength) {
+  // A broken specular streak on the road, oriented towards the camera rather than the car.
+  const material = new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    uniforms: { source: { value: source }, tint: { value: new THREE.Color(tint) }, strength: { value: strength } },
+    vertexShader: /* glsl */ `
+      varying vec2 road;
+      void main() {
+        vec4 world = modelMatrix * vec4(position, 1.0);
+        road = world.xz;
+        gl_Position = projectionMatrix * viewMatrix * world;
+      }
+    `,
+    fragmentShader: /* glsl */ `
+      uniform vec3 source, tint;
+      uniform float strength;
+      varying vec2 road;
+      float grit(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+      void main() {
+        vec2 towardsEye = normalize(cameraPosition.xz - source.xz);
+        float mirror = source.y / (cameraPosition.y + source.y);
+        vec2 center = mix(source.xz, cameraPosition.xz, mirror * .82);
+        vec2 offset = road - center;
+        float along = dot(offset, towardsEye);
+        float across = dot(offset, vec2(-towardsEye.y, towardsEye.x));
+        float taper = .36 + .045 * max(along, 0.0);
+        vec2 coreUV = vec2(across / taper, along / 2.1);
+        vec2 haloUV = vec2(across / (taper * 2.35), along / 3.3);
+        float core = exp(-dot(coreUV, coreUV));
+        float halo = exp(-dot(haloUV, haloUV));
+        float ripple = .24 + .76 * grit(floor(vec2(along * 27.0, across * 13.0)));
+        float chips = .37 + .63 * grit(floor(road * 62.0));
+        float border = smoothstep(353.05, 353.42, road.x) * (1.0 - smoothstep(366.7, 367.0, road.x));
+        gl_FragColor = vec4(tint, strength * border * (core * ripple * chips + .17 * halo));
+        #include <colorspace_fragment>
+      }
+    `,
+  });
+  const reflection = new THREE.Mesh(new THREE.PlaneGeometry(27, 27).rotateX(-Math.PI / 2), material);
+  reflection.position.set(source.x, .047, source.z);
+  scene.add(reflection);
 }
 
 export function dressDrift(game, hero, cruisers) {
@@ -68,7 +122,7 @@ export function dressDrift(game, hero, cruisers) {
       glow.scale.set(1.35, 0.82, 1);
       glow.material.opacity = 0.77;
       const spill = new THREE.Mesh(new THREE.PlaneGeometry(3.7, 7.6), new THREE.MeshBasicMaterial({
-        map: glowMap, color, transparent: true, opacity: 0.78, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false,
+        map: glowMap, color, transparent: true, opacity: 0.37, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false,
       }));
       spill.rotation.x = -Math.PI / 2;
       spill.position.set(side * 1.55, 0.073, 0.5);
@@ -76,6 +130,7 @@ export function dressDrift(game, hero, cruisers) {
       const light = new THREE.PointLight(color, 11, 5.5, 2);
       light.position.copy(lamp.position);
       car.body.add(light);
+      reflectSiren(game.scene, lamp.getWorldPosition(new THREE.Vector3()), color, .83);
     }
   }
 }

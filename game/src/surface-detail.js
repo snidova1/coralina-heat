@@ -54,9 +54,11 @@ export function dressBeachSand(material, clock) {
   coat(material, 'tide-stained sand', 'uniform float coastTime;\n', /* glsl */ `
     vec2 p = vSurface.xz;
     float beach = step(${BEACH.x0.toFixed(1)},p.x);
-    float grain = stoneGrain(p,57.0);
-    float rake = sin(p.x*17.0 + p.y*4.2 + field(p*.42)*5.8);
-    rake *= 1.0-smoothstep(.25,1.3,length(fwidth(p))*17.0);
+    float grain = stoneGrain(p,34.0) + .55 * stoneGrain(p,12.0);
+    float rake = sin(p.x*12.0 + p.y*2.4 + field(p*.42)*6.3);
+    rake *= 1.0-smoothstep(.25,1.3,length(fwidth(p))*12.0);
+    float wind = sin(p.x*2.2 + p.y*.31 + field(p*.19)*8.0);
+    float dune = field(p * vec2(.72,.22))*.52 + field(p * vec2(2.8,1.4))*.48;
     float tide = vSurface.y - ${SEA_LEVEL.toFixed(2)};
     tide += .10*sin(p.y*.23) + .058*sin(p.y*.84+coastTime*1.6);
     float damp = beach * (1.0-smoothstep(.018,.44,tide));
@@ -64,7 +66,8 @@ export function dressBeachSand(material, clock) {
     float walkRow = abs(mod(p.y, .79)-.395);
     float walkX = abs(p.x-path-5.1-.12*sign(sin(p.y*3.98)));
     float steps = (1.0-smoothstep(.6,1.0,length(vec2(walkX/.097,walkRow/.15)))) * smoothstep(.28,.47,field(p*.17));
-    diffuseColor.rgb *= .74 + field(p*.44)*.23 + grain*.43 + rake*.053 - steps*.22;
+    diffuseColor.rgb *= mix(.88, .76 + dune*.42 + grain*.49 + rake*.094 + wind*.052 - steps*.22, beach);
+    diffuseColor.rgb *= mix(vec3(1.0), vec3(1.12, .96, .76), beach * (1.0 - damp));
     diffuseColor.rgb *= mix(vec3(1),vec3(.49,.40,.34),damp*.86);
   `, 'roughnessFactor = mix(roughnessFactor,.27,damp*.65);', { coastTime: clock });
 }

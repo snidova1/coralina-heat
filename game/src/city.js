@@ -9,6 +9,7 @@ import { makeStream } from './rng.js';
 import { dressBeachSand } from './surface-detail.js';
 import { Architecture } from './architecture.js';
 import { buildMarinaCover } from './marina-cover.js';
+import { buildBeachWalk } from './beach-walk.js';
 import {
   LINES, LINE_MIN, LINE_MAX, ROAD_HALF, ISLAND, BEACH, CANAL, BRIDGE, BOULEVARD_X, SEA_LEVEL, PLACES,
 } from './map.js';
@@ -32,6 +33,27 @@ const BILLBOARDS = [
   ['LUX TOWER · LIVE ABOVE', '#2b1840', '#ffb0e0'],
 ];
 
+// Fit whole stories to each setback. Integer UV offsets seed the occupied offices
+// without moving the glazing grid or repeating the same pattern on neighboring towers.
+function towerWalls(bucket, x, z, w, d, y0, y1, style) {
+  const stories = Math.max(1, Math.round((y1 - y0) / 3.5));
+  bucket.boxSides(x, z, w, d, y0, y1, style === 'glass' ? 18 : 23,
+    8 * (y1 - y0) / stories, undefined, Math.floor(y0 / 3.5) / 8, Math.round(x * 7 + z * 11));
+}
+
+function sparselyLitOffices(shader) {
+  shader.fragmentShader = shader.fragmentShader.replace('#include <emissivemap_fragment>', /* glsl */ `
+    #include <emissivemap_fragment>
+    vec2 grid = vEmissiveMapUv * 8.0;
+    vec2 cell = floor(grid);
+    vec3 hash = fract(cell.xyx * vec3(.1031, .11369, .13787));
+    hash += dot(hash, hash.yzx + 19.19);
+    float occupied = step(.946, fract((hash.x + hash.y) * hash.z));
+    float legible = 1.0 - smoothstep(.16, .66, length(fwidth(grid)));
+    totalEmissiveRadiance *= occupied * legible * (.55 + .45 * fract(hash.x));
+  `);
+}
+
 export class City {
   constructor(scene) {
     this.scene = scene;
@@ -52,6 +74,7 @@ export class City {
     this.buildBlocks();
     this.buildCanalBridges();
     this.buildBeach();
+    this.beachWalk = buildBeachWalk(this);
     this.buildMarina();
     buildMarinaCover(this);
     this.buildSunspanBridge();
@@ -189,14 +212,15 @@ export class City {
 
   /** A building: facade walls in its style's bucket, a roof with parapet and rooftop clutter, a collider. */
   addBuilding(x, z, w, d, h, style, tint, opts = {}) {
-    const tile = style === 'glass' ? [12, 14] : style === 'warehouse' ? [16, 14] : [14, 14];
     const b = this.facadeBucket(style, tint);
     if (opts.shops && h > 7) {
       const seed = this.rnd();
       this.facadeBucket('shop' + Math.floor(seed * 12), 0xffffff).boxSides(x, z, w, d, 0.1, 4.6, 24, 4.5);
       this.trimBucket.box(x, 4.75, z, w + 0.5, 0.3, d + 0.5, 2);
-      b.boxSides(x, z, w, d, 4.6, h, tile[0], tile[1], undefined, 4.6 / tile[1]);
-    } else b.boxSides(x, z, w, d, 0.1, h, tile[0], tile[1]);
+    }
+    const base = opts.shops && h > 7 ? 4.6 : 0.1;
+    if (style === 'glass' || style === 'office') towerWalls(b, x, z, w, d, base, h, style);
+    else b.boxSides(x, z, w, d, base, h, style === 'warehouse' ? 16 : 14, 14, undefined, opts.shops ? base / 14 : 0);
     this.roofBucket.flat(x - w / 2, z - d / 2, x + w / 2, z + d / 2, h, 6);
     if (!opts.noParapet) {
       const p = 0.35;
@@ -228,7 +252,7 @@ export class City {
     for (let t = 0; t < tiers; t++) {
       const th = (h - 9) / tiers;
       const b = this.facadeBucket(style, tint);
-      b.boxSides(x, z, tw, td, y, y + th, style === 'glass' ? 12 : 14, 14, undefined, y / 14);
+      towerWalls(b, x, z, tw, td, y, y + th, style);
       this.roofBucket.flat(x - tw / 2, z - td / 2, x + tw / 2, z + td / 2, y + th, 6);
       this.trimBucket.box(x, y + th + 0.4, z, tw + 0.6, 0.8, td + 0.6, 2);
       y += th;
@@ -295,7 +319,7 @@ export class City {
     let y = 10;
     let w = W * 0.55;
     for (const th of [70, 60, 40]) {
-      this.facadeBucket('glass', 0xffd9f0).boxSides(cx, cz, w, w, y, y + th, 12, 14, undefined, y / 14);
+      towerWalls(this.facadeBucket('glass', 0xe4edf1), cx, cz, w, w, y, y + th, 'glass');
       this.trimBucket.box(cx, y + th + 0.5, cz, w + 1, 1, w + 1, 2);
       y += th;
       w *= 0.78;
@@ -396,7 +420,7 @@ export class City {
   flushBuildings() {
     for (const { style, tint, bucket } of this.buckets.values()) {
       const tex = facadeTextures(style);
-      const glass = style === 'glass';
+
       if (style.startsWith('shop')) {
         const shop = new THREE.MeshStandardMaterial({ map: tex.map, emissiveMap: tex.lit, emissive: 0xffffff, emissiveIntensity: 0.25, roughness: 0.6 });
         this.facadeMaterials.push(shop);
@@ -407,8 +431,10 @@ export class City {
       }
       const mat = new THREE.MeshStandardMaterial({
         map: tex.map, color: new THREE.Color(tint).lerp(new THREE.Color(0xffffff), 0.65), emissiveMap: tex.lit, emissive: tex.lit ? 0xffffff : 0x000000, emissiveIntensity: 0.05,
-        roughness: glass ? 0.12 : 0.85, metalness: glass ? 0.55 : 0,
+        roughness: tex.surface ? 1 : 0.85, roughnessMap: tex.surface || null,
+        metalness: tex.surface ? 1 : 0, metalnessMap: tex.surface || null,
       });
+      if (tex.surface) mat.onBeforeCompile = sparselyLitOffices;
       this.facadeMaterials.push(mat);
       const mesh = new THREE.Mesh(bucket.build(), mat);
       mesh.castShadow = true;
@@ -692,7 +718,7 @@ export class City {
   }
 
   buildAssetPlazas() {
-    const locations = [[52, -128, Math.PI / 2], [203, -9, Math.PI / 2], [370, -185, 0], [-49, -210, Math.PI], [370, 235, Math.PI]];
+    const locations = [[52, -119, Math.PI / 2], [203, -9, Math.PI / 2], [370, -185, 0], [-49, -210, Math.PI], [370, 235, Math.PI]];
     instanceProps(this.scene, 'prop_foodtruck', locations.map(([x, z, a]) => [x, 0.16, z, 1, a]), 5.3, 'z');
     if (hasModel('prop_foodtruck')) for (const [x, z, a] of locations) {
       const w = Math.abs(Math.sin(a)) > 0.5 ? 2.6 : 1.4;
@@ -716,6 +742,7 @@ export class City {
   }
 
   setNight(amount) {
+    this.beachWalk.setNight(amount);
     for (const m of this.facadeMaterials) m.emissiveIntensity = 0.04 + amount * 1.1;
     for (const s of this.signs) s.glow.material.opacity = 0.25 + amount * 0.45;
   }
