@@ -321,6 +321,7 @@ export function openDriverDoor(game, car) {
   seat.position.set(-0.38, 0.73, -0.41);
   seat.rotation.x = -0.16;
   car.body.add(seat);
+  return hinge;
 }
 
 export function targetBadge(game, actor, label) {

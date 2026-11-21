@@ -7,7 +7,7 @@ import { lanePoint, exitsFrom, validNode, DIRS, nodeIndexOf } from './roads.js';
 import { driveToward, TrafficDriver } from './traffic.js';
 import { Actor } from './actors.js';
 import { ShooterBrain } from './enemies.js';
-import { glowTexture } from './textures.js';
+import { glowTexture, decalTexture } from './textures.js';
 import { rand, pick, randInt } from './rng.js';
 
 const CARS_FOR_LEVEL = [0, 1, 2, 4, 5, 6];
@@ -317,6 +317,33 @@ export class Helicopter {
       this.group.add(skid);
     }
     this.group.add(body, belly, nose, tail, fin, this.rotor, this.tailRotor);
+    // livery, rotor blur, skid struts, nav lights and the searchlight pod: it reads as Air-9 at a glance
+    const livery = new THREE.MeshStandardMaterial({ map: decalTexture('CBPD · AIR 9', '#1d3f8f', '#ffffff', 512, 112, 'italic 900 64px "Arial Black", Impact, sans-serif'), roughness: 0.4, side: THREE.DoubleSide });
+    for (const s of [-1, 1]) {
+      const band = new THREE.Mesh(new THREE.PlaneGeometry(2.9, 0.62), livery);
+      band.position.set(s * 1.115, -0.02, -0.15);
+      band.rotation.y = s * Math.PI / 2;
+      this.group.add(band);
+      for (const z of [-0.7, 1.0]) {
+        const strut = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.55), dark);
+        strut.position.set(s * 0.82, -1.15, z);
+        strut.rotation.z = s * -0.25;
+        this.group.add(strut);
+      }
+      const nav = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(), color: s < 0 ? 0xff2a2a : 0x2aff6a, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false }));
+      nav.position.set(s * 1.15, 0.2, 0.4);
+      nav.scale.setScalar(0.9);
+      this.group.add(nav);
+    }
+    const blur = new THREE.Mesh(new THREE.CircleGeometry(5, 40).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0x20262e, transparent: true, opacity: 0.22, depthWrite: false, side: THREE.DoubleSide }));
+    blur.position.y = 1.53;
+    const tailBlur = new THREE.Mesh(new THREE.CircleGeometry(0.95, 24).rotateY(Math.PI / 2), blur.material);
+    tailBlur.position.set(0.3, 0.9, -6.3);
+    const pod = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.26, 0.34, 12), dark);
+    pod.position.set(0, -1.12, 1.4);
+    const lens = new THREE.Mesh(new THREE.CircleGeometry(0.2, 16).rotateX(Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0xeef6ff, toneMapped: false }));
+    lens.position.set(0, -1.3, 1.4);
+    this.group.add(blur, tailBlur, pod, lens);
     // searchlight: a real spotlight plus a visible beam
     this.spot = new THREE.SpotLight(0xf4f8ff, 0, 160, 0.16, 0.5, 1);
     this.spot.position.set(0, -1.2, 1.4);

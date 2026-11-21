@@ -178,6 +178,8 @@ export function createCharacter(look) {
   const grip = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.11, 0.055), steel);
   grip.position.y = -0.055;
   gun.add(slide, grip);
+  // a touch over life size, so the pistol still reads in a hand at third-person distance
+  gun.scale.setScalar(1.3);
   gun.visible = false;
   root.add(gun);
   const muzzle = new THREE.Object3D();
@@ -205,7 +207,40 @@ export function createCharacter(look) {
     kill() { this.pose = 'dead'; this.deadT = 0; },
     muzzlePosition(out) { root.updateMatrixWorld(true); return muzzle.getWorldPosition(out); },
     dispose() { mixer.stopAllAction(); mixer.uncacheRoot(model); ownedMaterials.forEach((m) => m.dispose()); },
+    /** One clip at one moment, nothing blended in: the base a still pose is built on. */
+    sample(clip, time) {
+      this.frozen = null;
+      mixer.stopAllAction();
+      active = actions[clip] ?? actions.walk;
+      active.reset().play();
+      active.time = time;
+      mixer.update(0);
+      model.rotation.set(0, 0, 0);
+      model.position.set(0, -0.03, 0);
+      root.updateMatrixWorld(true);
+    },
+    /** Keep every bone as it stands now; later updates only carry the gun in the hand. */
+    freeze() {
+      this.frozen = [];
+      model.traverse((o) => { if (o.isBone) this.frozen.push([o, o.quaternion.clone()]); });
+      this.frozenModel = [model.position.clone(), model.quaternion.clone()];
+      this.placeGun();
+    },
+    placeGun() {
+      root.updateMatrixWorld(true);
+      if (bones.RightHand) {
+        bones.RightHand.getWorldPosition(target);
+        gun.position.copy(root.worldToLocal(target));
+      }
+    },
     update(dt) {
+      if (this.frozen) {
+        for (const [bone, q] of this.frozen) bone.quaternion.copy(q);
+        model.position.copy(this.frozenModel[0]);
+        model.quaternion.copy(this.frozenModel[1]);
+        this.placeGun();
+        return;
+      }
       const next = this.speed > 4 ? actions.run : this.speed > 0.2 ? actions.walk : actions.idle;
       if (next !== active) { next.reset().play(); active.crossFadeTo(next, 0.22, false); active = next; }
       if (active === actions.walk) active.timeScale = Math.max(0.6, this.speed / 1.65);
@@ -232,21 +267,18 @@ export function createCharacter(look) {
           aimBone(bones[`${side}ForeArm`], hand);
         }
       } else if (this.pose === 'aim' || this.punchT > 0) {
+        // two-handed stance: both arms reach out at shoulder height, the left hand cupping the grip
         const lift = -this.aimPitch * 0.6 + this.recoil * 0.035;
-        aimBone(bones.RightArm, new THREE.Vector3(-0.19, 1.28 + lift, 0.36));
-        aimBone(bones.RightForeArm, new THREE.Vector3(-0.07, 1.34 + lift, 0.65));
-        aimBone(bones.LeftArm, new THREE.Vector3(0.22, 1.22 + lift, 0.3));
-        aimBone(bones.LeftForeArm, new THREE.Vector3(-0.02, 1.32 + lift, 0.62));
+        aimBone(bones.RightArm, new THREE.Vector3(-0.15, 1.36 + lift * 0.5, 0.46));
+        aimBone(bones.RightForeArm, new THREE.Vector3(-0.07, 1.37 + lift, 0.7));
+        aimBone(bones.LeftArm, new THREE.Vector3(0.13, 1.3 + lift * 0.5, 0.45));
+        aimBone(bones.LeftForeArm, new THREE.Vector3(-0.03, 1.35 + lift, 0.66));
         if (this.punchT > 0) this.punchT -= dt;
       } else if (this.pose === 'surrender' || this.pose === 'cower') {
         aimBone(bones.RightArm, new THREE.Vector3(-0.35, 1.9, 0));
         aimBone(bones.LeftArm, new THREE.Vector3(0.35, 1.9, 0));
       }
-      root.updateMatrixWorld(true);
-      if (bones.RightHand) {
-        bones.RightHand.getWorldPosition(target);
-        gun.position.copy(root.worldToLocal(target));
-      }
+      this.placeGun();
       gun.rotation.set(this.pose === 'aim' ? this.aimPitch : 1.1, 0, 0);
     },
   };

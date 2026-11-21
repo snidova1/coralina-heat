@@ -4,6 +4,7 @@ import { Helicopter } from './police.js';
 import { randomLook } from './humanoid.js';
 import { MISSIONS, CAST } from './story.js';
 import { stageTraffic, stageCrowd } from './shot-crowds.js';
+import { aim, kneelAim, hit, pointAt, boardCar } from './poses.js';
 import { goldenHour, aimChaseSearchlight, dressDrift, dressMarina, lightOceanDrive, coastBackdrop, openDriverDoor, targetBadge, clearSignal, TITLE_COAST } from './shot-art.js';
 
 const params = new URLSearchParams(location.search);
@@ -28,17 +29,6 @@ function startMission(game, index, step) {
   m.step = step - 1;
   m.clearContact();
   m.advance();
-}
-
-function walker(game, x, z, heading, look) {
-  const a = new Actor(game, 'civilian', x, z, look);
-  a.heading = heading;
-  a.body.root.position.copy(a.position);
-  a.body.root.rotation.y = heading;
-  a.body.speed = 2;
-  a.body.update(0.28);
-  game.pedestrians.list.push(a);
-  return a;
 }
 
 const SCENES = {
@@ -77,6 +67,8 @@ const SCENES = {
     game.police.heli = new Helicopter(game);
     game.police.heli.pos.set(366, 16, -76);
     game.police.heli.update(0, true);
+    // banking across the boulevard, flank to the camera so its livery and tail boom read
+    game.police.heli.group.rotation.set(0.1, -2.2, -0.24, 'YXZ');
     aimChaseSearchlight(game.police.heli, 359.2, -112.5);
     game.police.heli.rotor.rotation.y = 0.66;
     game.hud.showVehicleName(hero.label);
@@ -88,34 +80,23 @@ const SCENES = {
     game.day.hemi.intensity = 1.44;
     game.stats.cash = 12780;
     const car = game.vehicles.spawn('sports', 43.6, -129, Math.PI, 0xff2d3c);
-    openDriverDoor(game, car);
+    const door = openDriverDoor(game, car);
     const p = game.player;
     p.current = 'fists';
-    p.position.set(46.29, 0.02, -128.05);
-    p.heading = -1.14;
+    p.position.set(45.2, 0.02, -128.95);
+    p.heading = -2.35;
     p.body.root.position.copy(p.position);
     p.body.root.rotation.y = p.heading;
-    p.body.reach = [[0.02, 1.26, 0.78], [0.22, 1.05, 0.72]];
-    p.body.speed = 3.2;
-    p.body.update(0.37);
-    p.body.hips.rotation.x = 0.17;
-    if (p.body.arms) {
-      p.body.arms[0].shoulder.rotation.set(-1.45, 0, -0.47);
-      p.body.arms[0].elbow.rotation.x = -0.3;
-      p.body.arms[1].shoulder.rotation.set(-1.25, 0, 0.15);
-      p.body.arms[1].elbow.rotation.x = -0.46;
-    }
-    if (p.body.model) {
-      // lean into the car, lifted so the leading toe meets the asphalt instead of sinking through it
-      p.body.model.rotation.x = 0.14;
-      p.body.model.position.y += 0.075;
-    }
+    car.root.updateMatrixWorld(true);
+    // one hand on the top of the open door, the other reaching for the wheel, leaning in to drop into the seat
+    const V = game.THREE.Vector3;
+    boardCar(p.body, door.localToWorld(new V(0.02, 1.2, -1.1)), new V(44.3, 1.0, -129.0));
     const veraLook = { ...randomLook(), skirt: true, authoredPalette: true, skin: 0xd9a07a, shirt: 0xd98270, pants: 0xd98270, print: false };
     const vera = new Actor(game, 'civilian', 46.0, -130.02, veraLook);
     vera.position.y = 0.02;
     vera.faceToward(p.position.x, p.position.z, 1);
     vera.sync();
-    vera.body.update(0);
+    pointAt(vera.body, new V(43.3, 0.85, -129.4));
     stageCrowd(game, [
       [30.6, -137, Math.PI], [31.4, -144.5, 0, 'stroll'], [29.4, -149, -Math.PI / 2, 'idle'], [30.8, -156, Math.PI],
       [31.6, -163, 0.05], [30.2, -168.5, Math.PI, 'stroll'], [31.0, -176, 0], [30.4, -184, Math.PI],
@@ -129,7 +110,7 @@ const SCENES = {
     clearSignal(game, 31.95, -128.05);
     game.hud.setObjective('Hot Wheels', 'Steal Ocho’s ~Vortice GT~.');
     game.hud.subtitle(CAST.vera.name, CAST.vera.color, 'That’s Ocho’s car. Get in before he knows it’s gone.', 4);
-    camera(game, [49.2, 1.91, -125.38, 44.65, 1.29, -130.02], 54);
+    camera(game, [48.3, 1.86, -126.0, 44.5, 1.2, -130.2], 54);
   },
 
   mission(game) {
@@ -139,7 +120,8 @@ const SCENES = {
     game.stats.cash = 71400;
     const p = game.player;
     p.position.set(143.4, 0.16, 386.4);
-    p.heading = Math.PI / 2;
+    // bladed stance: torso turned off the line of fire so the arms and pistol read past his shoulder
+    p.heading = Math.PI / 2 + 0.55;
     p.giveWeapon('pistol', 72);
     p.current = 'pistol';
     p.armor = 45;
@@ -147,21 +129,27 @@ const SCENES = {
     p.aiming = true;
     p.body.root.position.copy(p.position);
     p.body.root.rotation.y = p.heading;
-    p.body.pose = 'aim';
-    p.body.setArmed(true);
-    p.body.update(0);
+    aim(p.body, 0.02, new game.THREE.Vector3(156.9, 1.5, 385.7), 0.02);
     startMission(game, 5, 3);
     const enemies = game.missions.enemies;
-    const positions = [[156.9, 385.7], [151.9, 383.15], [150.7, 388.9], [155.6, 388.4], [163, 381.5], [167, 388.75]];
+    // Ocho and two gunmen fire from their feet, one takes a knee behind the planter, one is hit, one is down.
+    const positions = [[156.9, 385.7], [151.9, 383.15], [165.3, 384.0], [155.6, 388.4], [163, 381.5], [167, 388.75]];
     enemies.forEach((e, i) => {
       e.position.set(positions[i][0], 0.16, positions[i][1]);
       e.heading = Math.atan2(p.position.x - e.position.x, p.position.z - e.position.z);
       e.body.root.position.copy(e.position);
       e.body.root.rotation.y = e.heading;
-      e.body.pose = 'aim';
       e.body.setArmed(true);
-      if (i === 4) e.damage(500, 'player');
-      e.body.update(i === 4 ? 0.5 : 0);
+      if (i === 4) {
+        e.damage(500, 'player');
+        e.body.update(0.5);
+      } else if (i === 2) kneelAim(e.body, 0.04);
+      else if (i === 3) {
+        hit(e.body);
+        const chest = e.chestPos;
+        for (let k = 0; k < 7; k++) game.effects.emit('blood', chest.x, chest.y, chest.z, -0.6 + k * 0.2, 0.4 + (k % 3) * 0.3, 0.5 - k * 0.15);
+      }
+      else aim(e.body, 0.03);
     });
     camera(game, [141.01, 1.92, 385.34, 156.3, 1.56, 387.25], 49);
     game.combat.playerShoot();
