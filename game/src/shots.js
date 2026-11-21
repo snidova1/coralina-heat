@@ -3,7 +3,7 @@ import { Actor } from './actors.js';
 import { Helicopter } from './police.js';
 import { randomLook } from './humanoid.js';
 import { MISSIONS, CAST } from './story.js';
-import { goldenHour, dressDrift, dressMarina, lightOceanDrive, coastBackdrop, openDriverDoor, targetBadge, TITLE_COAST } from './shot-art.js';
+import { goldenHour, aimChaseSearchlight, dressDrift, dressMarina, lightOceanDrive, coastBackdrop, openDriverDoor, targetBadge, TITLE_COAST } from './shot-art.js';
 
 const params = new URLSearchParams(location.search);
 
@@ -68,7 +68,7 @@ const SCENES = {
     game.police.heli = new Helicopter(game);
     game.police.heli.pos.set(390, 13.1, -93.4);
     game.police.heli.update(0, true);
-    game.police.heli.spot.intensity = 1750;
+    aimChaseSearchlight(game.police.heli);
     game.police.heli.rotor.rotation.y = 0.66;
     game.hud.showVehicleName(hero.label);
     camera(game, [351.15, 1.64, -124.8, 364.8, 3.64, -108.2], 51);
@@ -97,18 +97,12 @@ const SCENES = {
       p.body.arms[1].elbow.rotation.x = -0.46;
     }
     if (p.body.model) p.body.model.rotation.x = 0.14;
-    const driverLook = { ...randomLook(), skirt: true, resortBlue: true };
-    const driver = walker(game, 45.37, -129.23, 0.95, driverLook);
-    driver.body.reach = [[-0.48, 1.61, 0.37], [0.59, 1.50, 0.23]];
-    driver.body.update(0.29);
-    driver.body.hips.position.y -= 0.17;
-    driver.body.hips.rotation.x = 0.38;
-    if (driver.body.arms) {
-      driver.body.arms[0].shoulder.rotation.set(-2.18, 0, -0.62);
-      driver.body.arms[1].shoulder.rotation.set(-1.13, 0, 0.43);
-      driver.body.arms[1].elbow.rotation.x = -0.57;
-    }
-    if (driver.body.model) driver.body.model.rotation.set(0.31, 0.12, -0.20);
+    const veraLook = { ...randomLook(), skirt: true, authoredPalette: true, skin: 0xd9a07a, shirt: 0xd98270, pants: 0xd98270, print: false };
+    const vera = new Actor(game, 'civilian', 46.0, -130.02, veraLook);
+    vera.position.y = 0.02;
+    vera.faceToward(p.position.x, p.position.z, 1);
+    vera.sync();
+    vera.body.update(0);
     for (const [x, z, yaw] of [[49, -139, 0], [51, -150, 0.25], [31, -141, -0.15], [33, -151, 0], [48, -171, 0.3], [53, -122, -1.1], [30, -134, 0.8]]) walker(game, x, z, yaw);
     game.vehicles.spawn('taxi', 36.5, -146, 0.1);
     game.vehicles.spawn('pickup', 43.8, -168, Math.PI);

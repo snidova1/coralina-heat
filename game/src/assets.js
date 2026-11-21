@@ -133,11 +133,12 @@ export function createCharacter(look) {
   root.add(contactShadow(0.85, 0.65));
   root.scale.setScalar(look.height);
   const ownedMaterials = [];
-  if (kind === 'civilian' || kind === 'contact') model.traverse((o) => {
+  // Named looks can keep the authored atlas instead of heuristically recoloring it.
+  if ((kind === 'civilian' || kind === 'contact') && !look.authoredPalette) model.traverse((o) => {
     if (!o.isMesh) return;
     o.material = o.material.clone();
     o.material.color.offsetHSL((look.shirt % 101) / 101 * 0.3 - 0.15, -0.06, 0.025);
-    const clothHue = { value: look.resortBlue ? 1.0 : ((look.shirt >>> 12) % 7 - 3) * 0.13 };
+    const clothHue = { value: ((look.shirt >>> 12) % 7 - 3) * 0.13 };
     const complexion = { value: new THREE.Color(look.skin).r };
     o.material.onBeforeCompile = shader => {
       shader.uniforms.clothHue = clothHue;

@@ -28,6 +28,43 @@ export function goldenHour(game, direction) {
   game.city.waterClock.value = 1.35;
 }
 
+export function aimChaseSearchlight(heli) {
+  const { spot, beam } = heli;
+  spot.target.position.set(356.45, 0.02, -121.1);
+  // Inverse-square falloff keeps this low, oblique beam from bleaching the road.
+  spot.decay = 2;
+  spot.color.set(0xd9e8ff);
+  spot.intensity = 1950;
+  spot.angle = 0.105;
+  spot.penumbra = 0.88;
+  const source = spot.getWorldPosition(new THREE.Vector3());
+  const length = source.distanceTo(spot.target.position);
+  beam.position.copy(source);
+  beam.scale.set(length * 0.085, length, length * 0.085);
+  beam.lookAt(spot.target.position);
+  beam.rotateX(-Math.PI / 2);
+}
+
+function wetReflectionTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 64;
+  canvas.height = 128;
+  const ctx = canvas.getContext('2d');
+  const pixels = ctx.createImageData(canvas.width, canvas.height);
+  for (let y = 0; y < canvas.height; y++) {
+    const v = (y + 0.5) / canvas.height;
+    for (let x = 0; x < canvas.width; x++) {
+      const u = (x + 0.5) / canvas.width;
+      const edge = Math.max(0, 1 - Math.hypot((u - 0.5) * 2, (v - 0.5) * 2));
+      const ripples = 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(y * 1.71 + x * 0.16 + Math.sin(y * 0.56))) ** 2;
+      const i = (y * canvas.width + x) * 4;
+      pixels.data.set([255, 255, 255, Math.round(255 * edge ** 1.5 * ripples)], i);
+    }
+  }
+  ctx.putImageData(pixels, 0, 0);
+  return new THREE.CanvasTexture(canvas);
+}
+
 export function dressDrift(game, hero, cruisers) {
   const { x, z } = hero.position;
   const rubberMaterial = new THREE.MeshBasicMaterial({ color: 0x131721, transparent: true, opacity: 0.62, depthWrite: false });
@@ -53,6 +90,9 @@ export function dressDrift(game, hero, cruisers) {
     puff.age = puff.life * (.34 + taper * .21);
   }
   game.effects.update(0.001);
+  for (const puff of game.effects.active) {
+    if (puff.kind === 'tire') puff.s.material.opacity *= 0.62;
+  }
   const glowMap = glowTexture();
   // Short shutter streaks in the road plane; vehicle silhouettes stay sharp.
   for (let i = 0; i < 30; i++) {
@@ -60,13 +100,15 @@ export function dressDrift(game, hero, cruisers) {
     const roadZ = z - 20 + (i * 17 % 41);
     const width = 0.07 + (i % 5) * 0.025;
     const streak = new THREE.Mesh(new THREE.PlaneGeometry(width, 1.3 + (i % 7) * 0.66), new THREE.MeshBasicMaterial({
-      map: glowMap, color: i % 4 ? 0xf2a17c : 0x8eafff, transparent: true, opacity: 0.37,
+      map: glowMap, color: i % 4 ? 0xf2a17c : 0x8eafff, transparent: true, opacity: 0.19,
       depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false,
     }));
     streak.rotation.x = -Math.PI / 2;
     streak.position.set(roadX, 0.039, roadZ);
     game.scene.add(streak);
   }
+  const reflectionMap = wetReflectionTexture();
+  const reflectionPlane = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
   for (const car of cruisers) {
     if (car.extras.spill) car.extras.spill.visible = false;
     for (const { lamp, glow, side } of car.extras.strobes) {
@@ -74,12 +116,15 @@ export function dressDrift(game, hero, cruisers) {
       lamp.material.emissiveIntensity = 5;
       glow.visible = true;
       glow.scale.set(1.35, 0.82, 1);
-      glow.material.opacity = 0.77;
-      const spill = new THREE.Mesh(new THREE.PlaneGeometry(3.7, 7.6), new THREE.MeshBasicMaterial({
-        map: glowMap, color, transparent: true, opacity: 0.78, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false,
+      glow.material.opacity = 0.61;
+      // Break the reflections into ripples and keep them below the lane paint.
+      const spill = new THREE.Mesh(reflectionPlane, new THREE.MeshBasicMaterial({
+        map: reflectionMap, color, transparent: true, opacity: side < 0 ? 0.82 : 0.67,
+        depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false,
       }));
-      spill.rotation.x = -Math.PI / 2;
-      spill.position.set(side * 1.55, 0.073, 0.5);
+      spill.scale.set(2.4, 1, side < 0 ? 9.6 : 8.2);
+      spill.rotation.y = 0.28;
+      spill.position.set(side * 1.45 + 0.8, 0.037, side < 0 ? 4.4 : 2.65);
       car.root.add(spill);
       const light = new THREE.PointLight(color, 8, 5.5, 2);
       light.position.copy(lamp.position);
