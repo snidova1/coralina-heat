@@ -26,14 +26,14 @@ try {
         const b = new g.THREE.Box3().setFromObject(o);
         return { min: b.min.toArray(), max: b.max.toArray(), size: b.getSize(new g.THREE.Vector3()).toArray() };
       };
-      return { loaded: g.assetReport.loaded.length, failed: g.assetReport.failed, assets, player: g.player.body.root.userData.asset, weapon: g.player.current, wanted: g.wanted.level, cars: g.vehicles.list.map((v) => ({ type: v.type, asset: v.root.userData.asset, bounds: bounds(v.body) })), groundY: g.player.position.y, playerBounds: bounds(g.player.body.model), render: g.renderer.info.render };
+      return { loaded: g.assetReport.loaded.length, failed: g.assetReport.failed, assets, player: g.player.body.root.userData.asset, weapon: g.player.current, wanted: g.wanted.level, cars: g.vehicles.list.map((v) => ({ type: v.type, asset: v.root.userData.asset, ground: v.position.y, bounds: bounds(v.body) })), groundY: g.player.position.y, playerBounds: bounds(g.player.body.model), render: g.renderer.info.render };
     });
     assert.equal(state.loaded, 17);
     assert.deepEqual(state.failed, []);
     assert.equal(state.player, 'ch_player');
     for (const name of ['prop_palm', 'prop_umbrella', 'prop_lifeguard', 'prop_foodtruck']) assert.ok(state.assets[name] > 0, name);
     assert.ok(state.cars.every((v) => v.asset), 'All vehicles use GLBs');
-    assert.ok(state.cars.every((v) => v.bounds.min[1] >= -0.025), 'No car sinks below asphalt');
+    assert.ok(state.cars.every((v) => v.bounds.min[1] >= v.ground - 0.025), 'No car sinks below its road or sand');
     if (shot === 'street' || shot === 'mission') assert.ok(Math.abs(state.playerBounds.min[1] - state.groundY) < 0.06, 'Feet contact ground');
     if (shot === 'chase') { assert.equal(state.wanted, 4); assert.ok(state.cars.filter((v) => v.type === 'police').length >= 3); }
     if (shot === 'mission') { assert.equal(state.weapon, 'pistol'); assert.ok(state.assets.ch_gang >= 6); }

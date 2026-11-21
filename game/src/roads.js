@@ -3,7 +3,8 @@
 import * as THREE from 'three';
 import { GeometryBucket } from './geometry.js';
 import { surfaceTexture } from './textures.js';
-import { addRoadHardware, shadeAsphalt } from './street-surfaces.js';
+import { addRoadHardware, addKerbs, shadeAsphalt, shadePaint } from './street-surfaces.js';
+import { addTrafficSignals } from './traffic-signals.js';
 import { LINES, LINE_MIN, LINE_MAX, STEP, ROAD_HALF, WALK, BRIDGE, CANAL, BOULEVARD_X, BEACH } from './map.js';
 
 const ROAD_Y = 0.02;
@@ -14,6 +15,7 @@ export class Roads {
   constructor(scene) {
     this.scene = scene;
     this.lampHeads = null;
+    this.slabs = [];
     this.build();
   }
 
@@ -88,16 +90,20 @@ export class Roads {
     this.slab(pavement, BOULEVARD_X + ROAD_HALF, CANAL.zMax, BEACH.x0, LINE_MAX + ROAD_HALF + 25, false);
 
     const asphaltMat = new THREE.MeshStandardMaterial({ map: surfaceTexture('asphalt'), roughness: 0.82, color: 0xb9b6b8 });
-    shadeAsphalt(asphaltMat);
+    shadeAsphalt(asphaltMat, this.scene);
     const road = new THREE.Mesh(asphalt.build(), asphaltMat);
     road.receiveShadow = true;
     const white = new THREE.Mesh(paintW.build(), new THREE.MeshStandardMaterial({ color: 0xf2efe6, roughness: 0.6 }));
     const yellow = new THREE.Mesh(paintY.build(), new THREE.MeshStandardMaterial({ color: 0xf2b630, roughness: 0.6 }));
     white.receiveShadow = yellow.receiveShadow = true;
+    shadePaint(white.material);
+    shadePaint(yellow.material);
     const pave = new THREE.Mesh(pavement.build(), new THREE.MeshStandardMaterial({ map: surfaceTexture('pavement'), roughness: 0.9 }));
     pave.receiveShadow = true;
     this.scene.add(road, white, yellow, pave);
     addRoadHardware(this.scene);
+    addKerbs(this.scene, this.slabs, ROAD_Y, CURB_Y);
+    this.signals = addTrafficSignals(this.scene);
     this.buildLamps();
   }
 
@@ -109,6 +115,7 @@ export class Roads {
       return;
     }
     bucket.flat(x0, z0, x1, z1, CURB_Y, 4);
+    this.slabs.push([x0, z0, x1, z1]);
     bucket.boxSides((x0 + x1) / 2, (z0 + z1) / 2, x1 - x0, z1 - z0, -0.5, CURB_Y, 4, 4);
   }
 

@@ -105,6 +105,21 @@ function buildModel(typeName, color) {
     asset.position.y = 0.025;
     let shell;
     asset.traverse((o) => { if (o.isMesh && !shell) shell = o; });
+    // The Solace shares the cab's body: repaint its yellow panels in the sedan's own colour.
+    if (typeName === 'sedan') {
+      shell.material = shell.material.clone();
+      const paintColor = { value: new THREE.Color(color) };
+      shell.material.onBeforeCompile = (shader) => {
+        shader.uniforms.paintColor = paintColor;
+        shader.fragmentShader = 'uniform vec3 paintColor;\n' + shader.fragmentShader.replace('#include <map_fragment>', `
+          #include <map_fragment>
+          vec3 c = diffuseColor.rgb;
+          float cab = smoothstep(.08, .22, c.g - c.b) * smoothstep(.28, .45, c.g / max(c.r, .01)) * (1.0 - smoothstep(.85, 1.0, c.g / max(c.r, .01)));
+          diffuseColor.rgb = mix(c, paintColor * (.25 + 1.05 * max(c.r, c.g)), cab);
+        `);
+      };
+      shell.material.customProgramCacheKey = () => 'sedan-paint';
+    }
     const extras = { strobes: [] };
     if (typeName === 'police') {
       const height = new THREE.Box3().setFromObject(asset).max.y;
@@ -125,7 +140,19 @@ function buildModel(typeName, color) {
       extras.spill = spill;
     }
     root.userData.asset = assetName;
-    return { root, body, shell, wheels: [], extras, beams: [], paintMat: shell.material };
+    // dusk lamps: warm headlight glows at the nose, red tail glows at the back
+    const bounds = new THREE.Box3().setFromObject(asset);
+    const beams = [];
+    for (const [z, y, color, size] of [[bounds.max.z + 0.05, 0.68, 0xfff0c8, 1.15], [bounds.min.z - 0.05, 0.86, 0xff2a2a, 0.7]]) {
+      for (const s of [-1, 1]) {
+        const g = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(), color, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false, opacity: 0.6 }));
+        g.position.set(s * (T.wid / 2 - 0.32), y * (typeName === 'pickup' ? 1.25 : 1), z);
+        g.scale.setScalar(size);
+        body.add(g);
+        beams.push(g);
+      }
+    }
+    return { root, body, shell, wheels: [], extras, beams, paintMat: shell.material };
   }
   const m = mats();
   const root = new THREE.Group();
@@ -483,8 +510,10 @@ export class Vehicle {
   dispose() {
     this.game.scene.remove(this.root);
     // Authored mesh geometry/materials and contact shadows belong to the shared asset cache.
-    // Only the per-cruiser lighting overlays are owned by this instance.
+    // Only the lamp sprites and the cruiser lighting overlays are owned by this instance.
     if (this.root.userData.asset) {
+      for (const beam of this.beams) beam.material.dispose();
+      if (this.type === 'sedan') this.shell.material.dispose();
       for (const { lamp, glow } of this.extras.strobes) {
         lamp.geometry.dispose();
         lamp.material.dispose();

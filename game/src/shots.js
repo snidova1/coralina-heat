@@ -3,7 +3,8 @@ import { Actor } from './actors.js';
 import { Helicopter } from './police.js';
 import { randomLook } from './humanoid.js';
 import { MISSIONS, CAST } from './story.js';
-import { goldenHour, aimChaseSearchlight, dressDrift, dressMarina, lightOceanDrive, coastBackdrop, openDriverDoor, targetBadge, TITLE_COAST } from './shot-art.js';
+import { stageTraffic, stageCrowd } from './shot-crowds.js';
+import { goldenHour, aimChaseSearchlight, dressDrift, dressMarina, lightOceanDrive, coastBackdrop, openDriverDoor, targetBadge, clearSignal, TITLE_COAST } from './shot-art.js';
 
 const params = new URLSearchParams(location.search);
 
@@ -60,18 +61,26 @@ const SCENES = {
       car.syncMesh(0);
       return car;
     });
-    game.vehicles.spawn('taxi', 365.6, -125.8, 0);
-    game.vehicles.spawn('pickup', 365, -94, 0);
-    for (const z of [-138, -128, -111, -95, -82]) walker(game, 370, z, z < -120 ? 0 : Math.PI);
+    // Ocean Drive keeps living round the chase: cars pulled to the kerb, the evening crowd scattering.
+    stageTraffic(game, [
+      ['sedan', 356.6, -84, 0.02, 0x8fb8de], ['taxi', 365.7, -64, Math.PI + 0.05], ['pickup', 354.2, -57, 0],
+      ['sedan', 363.4, -42, Math.PI, 0xf7d7e0], ['sports', 356.6, -29, 0, 0x00b8d4], ['taxi', 363.4, -14, Math.PI],
+    ]);
+    stageCrowd(game, [
+      [369.2, -113, -2.5, 'run'], [370.5, -104, Math.PI], [371.4, -95.5, -1.5, 'idle'], [369.8, -88, 0.1],
+      [372.1, -80, Math.PI, 'stroll'], [370.6, -71, 0], [381, -104, 2.8, 'stroll'], [382.2, -103.2, 2.9, 'stroll'],
+      [386, -95, -0.4], [352.4, -108, Math.PI / 2, 'idle'], [351.6, -100, Math.PI], [352.6, -92, 0.05],
+      [351.5, -80, Math.PI, 'run'], [350.9, -70, 0, 'stroll'], [352.6, -111.6, 2.3, 'cower'],
+    ]);
     dressDrift(game, hero, cops);
     coastBackdrop(game);
     game.police.heli = new Helicopter(game);
-    game.police.heli.pos.set(390, 13.1, -93.4);
+    game.police.heli.pos.set(366, 16, -76);
     game.police.heli.update(0, true);
-    aimChaseSearchlight(game.police.heli);
+    aimChaseSearchlight(game.police.heli, 359.2, -112.5);
     game.police.heli.rotor.rotation.y = 0.66;
     game.hud.showVehicleName(hero.label);
-    camera(game, [351.15, 1.64, -124.8, 364.8, 3.64, -108.2], 51);
+    camera(game, [350.6, 2.1, -126.4, 364.0, 2.8, -104.5], 51);
   },
 
   street(game) {
@@ -103,10 +112,17 @@ const SCENES = {
     vera.faceToward(p.position.x, p.position.z, 1);
     vera.sync();
     vera.body.update(0);
-    for (const [x, z, yaw] of [[49, -139, 0], [51, -150, 0.25], [31, -141, -0.15], [33, -151, 0], [48, -171, 0.3], [53, -122, -1.1], [30, -134, 0.8]]) walker(game, x, z, yaw);
-    game.vehicles.spawn('taxi', 36.5, -146, 0.1);
-    game.vehicles.spawn('pickup', 43.8, -168, Math.PI);
-    game.vehicles.spawn('sedan', 36.4, -184, 0);
+    stageCrowd(game, [
+      [30.6, -137, Math.PI], [31.4, -144.5, 0, 'stroll'], [29.4, -149, -Math.PI / 2, 'idle'], [30.8, -156, Math.PI],
+      [31.6, -163, 0.05], [30.2, -168.5, Math.PI, 'stroll'], [31.0, -176, 0], [30.4, -184, Math.PI],
+      [22, -130.6, Math.PI / 2], [14, -131.4, -Math.PI / 2, 'stroll'], [25.2, -132.1, 0.4, 'idle'], [25.8, -131.0, -2.6, 'idle'],
+      [48.6, -152, Math.PI], [49.2, -163, 0], [48.4, -178, Math.PI, 'stroll'],
+    ]);
+    stageTraffic(game, [
+      ['taxi', 36.5, -146, 0.1], ['sedan', 43.4, -150, Math.PI, 0x6fd3c4], ['pickup', 43.8, -168, Math.PI],
+      ['sedan', 36.4, -184, 0], ['sports', 36.6, -206, 0, 0xffa400], ['taxi', 43.4, -214, Math.PI],
+    ]);
+    clearSignal(game, 31.95, -128.05);
     game.hud.setObjective('Hot Wheels', 'Steal Ocho’s ~Vortice GT~.');
     game.hud.subtitle(CAST.vera.name, CAST.vera.color, 'That’s Ocho’s car. Get in before he knows it’s gone.', 4);
     camera(game, [49.2, 1.91, -125.38, 44.65, 1.29, -130.02], 54);
@@ -149,6 +165,13 @@ const SCENES = {
     for (const p of game.effects.active) if (p.kind === 'flash') p.size *= 0.63;
     for (const { line } of game.effects.tracers) line.scale.multiplyScalar(0.65);
     game.effects.update(0.001);
+    // the evening crowd on the marina walk scatters from the gunfire
+    stageCrowd(game, [
+      [172, 383, Math.PI / 2 + 0.2, 'run'], [178, 389, Math.PI / 2 - 0.1, 'run'], [185, 385, Math.PI / 2, 'run'],
+      [192, 381, Math.PI / 2 + 0.3, 'run'], [200, 388, Math.PI / 2], [168, 378.5, Math.PI + 0.4, 'run'],
+      [175, 376, Math.PI, 'run'], [190, 375, Math.PI - 0.3, 'run'], [166, 391.2, 0.4, 'cower'],
+      [162, 374, Math.PI + 0.3, 'run'], [170, 371, Math.PI, 'run'], [181, 379.5, Math.PI / 2, 'run'],
+    ]);
     targetBadge(game, enemies[0], 'SAINT OCHO');
     game.hud.subtitle(CAST.ocho.name, CAST.ocho.color, 'You came back for THIS? Coralina eats boys like you!', 4);
     game.missions.update(0);
@@ -159,7 +182,21 @@ const SCENES = {
   title(game) {
     goldenHour(game, [-0.44, 0.08, 0.89]);
     game.day.hemi.intensity = 1.54;
+    // a higher fill angle than the disc, so the sand reads; the disc stays on the horizon
+    game.day.sunDirection = new game.THREE.Vector3(-0.44, 0.2, 0.89).normalize();
     lightOceanDrive(game);
+    stageCrowd(game, [
+      [430.5, -328, 0.1], [429.6, -318, Math.PI, 'stroll'], [430.2, -306, 0.05, 'stroll'], [431.2, -304.8, 0.1, 'stroll'],
+      [428.8, -290, Math.PI], [429.5, -276, 0, 'run'], [430, -262, Math.PI, 'stroll'], [436, -312, -1.2, 'idle'],
+      [403.2, -322.6, 0, 'idle'], [406.8, -323, 0.1, 'idle'], [403.5, -313.2, Math.PI, 'idle'], [407.2, -313.8, Math.PI + 0.2, 'idle'],
+      [414, -327, 1.2, 'idle'], [415.2, -326.2, -2.0, 'idle'], [412, -336, 0.3], [395, -301, Math.PI / 2], [392, -286, 2.5, 'stroll'],
+      [386, -271, 0], [370.5, -300, 0], [371, -292, Math.PI], [369.8, -280, 0, 'stroll'], [370.6, -268, Math.PI], [370.2, -255, 0],
+    ]);
+    stageTraffic(game, [
+      ['taxi', 363.4, -300, Math.PI], ['sedan', 356.6, -288, 0, 0xf7d7e0], ['pickup', 363.4, -262, Math.PI],
+      ['sedan', 356.6, -246, 0, 0x8fb8de], ['sports', 363.4, -228, Math.PI, 0xffa400], ['sedan', 356.6, -210, 0, 0xf4f1ea],
+      ['police', 356.6, -322, 0], ['pickup', 404, -298, 0.1, 0xd9d4c7],
+    ]);
     game.player.position.set(368, 0, -236);
     game.player.body.root.visible = false;
     game.menu.title();

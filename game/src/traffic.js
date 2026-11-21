@@ -106,7 +106,7 @@ export class Traffic {
   constructor(game) {
     this.game = game;
     this.cars = [];
-    this.target = 26;
+    this.target = 32;
     this.radius = 230;
   }
 

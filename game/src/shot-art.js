@@ -28,9 +28,9 @@ export function goldenHour(game, direction) {
   game.city.waterClock.value = 1.35;
 }
 
-export function aimChaseSearchlight(heli) {
+export function aimChaseSearchlight(heli, x, z) {
   const { spot, beam } = heli;
-  spot.target.position.set(356.45, 0.02, -121.1);
+  spot.target.position.set(x, 0.02, z);
   // Inverse-square falloff keeps this low, oblique beam from bleaching the road.
   spot.decay = 2;
   spot.color.set(0xd9e8ff);
@@ -40,7 +40,7 @@ export function aimChaseSearchlight(heli) {
   const source = spot.getWorldPosition(new THREE.Vector3());
   const length = source.distanceTo(spot.target.position);
   beam.position.copy(source);
-  beam.scale.set(length * 0.085, length, length * 0.085);
+  beam.scale.set(length * 0.05, length, length * 0.05);
   beam.lookAt(spot.target.position);
   beam.rotateX(-Math.PI / 2);
 }
@@ -249,6 +249,18 @@ export function coastBackdrop(game) {
     skyline.setColorAt(i, new THREE.Color([0x5b777e, 0x69888e, 0x79969a][i % 3]));
   });
   game.scene.add(skyline);
+}
+
+/** Take one signal pole out of a framing where it would sit behind the HUD. */
+export function clearSignal(game, x, z) {
+  const { meshes, spots } = game.roads.signals;
+  const i = spots.findIndex(([sx, sz]) => Math.hypot(sx - x, sz - z) < 1);
+  if (i < 0) return;
+  const hidden = new THREE.Matrix4().makeScale(0, 0, 0);
+  for (const mesh of meshes) {
+    mesh.setMatrixAt(i, hidden);
+    mesh.instanceMatrix.needsUpdate = true;
+  }
 }
 
 export function openDriverDoor(game, car) {

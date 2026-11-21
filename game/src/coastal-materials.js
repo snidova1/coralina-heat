@@ -40,8 +40,20 @@ export function shadeSand(material) {
       vec2 stepPos = vec2(mod(trail.x,.58)-.29, mod(trail.y + mod(stride,2.0)*.17, 13.0)-6.5);
       float printMark = (1.0-smoothstep(.70,1.13,length(stepPos*vec2(7.6,16.0))))*step(.31,coastHash(vec2(stride,floor(p.y/13.0))));
       printMark *= smoothstep(373.0,382.0,p.x)*(1.0-smoothstep(.047,.21,length(fwidth(p))));
+      float wrackLine = coastLine - 9.0 + 1.8*sin(p.y*.043) + (drift-.5)*3.2;
+      float wrack = (1.0-smoothstep(.15,1.1,abs(p.x-wrackLine)))*smoothstep(.42,.62,coastNoise(p*vec2(2.3,.8)));
+      float lane = p.x - (404.0 + 2.6*sin(p.y*.021) + 1.2*sin(p.y*.071));
+      float tyres = (1.0-smoothstep(.10,.19,abs(abs(lane)-.82)))*(1.0-smoothstep(.047,.21,length(fwidth(p))));
+      tyres *= .55+.45*coastNoise(p*vec2(.4,3.0));
+      float dune = coastNoise(p*vec2(.05,.09))*(1.0-wet);
       diffuseColor.rgb *= mix(vec3(.92,.75,.52), vec3(.36,.25,.21), wet);
-      diffuseColor.rgb *= .85 + .26*drift + .079*ripple - .22*printMark;
+      diffuseColor.rgb *= .85 + .26*drift + .079*ripple - .22*printMark + .16*(dune-.5);
+      diffuseColor.rgb = mix(diffuseColor.rgb, vec3(.13,.11,.07), wrack*.7);
+      diffuseColor.rgb *= 1.0 - .2*tyres;
+      float wetSand = smoothstep(coastLine - 3.5, coastLine - .2, p.x + (drift-.5)*2.0);
+    `).replace('#include <roughnessmap_fragment>', `
+      #include <roughnessmap_fragment>
+      roughnessFactor = mix(roughnessFactor, .2, wetSand);
     `);
   };
 }

@@ -1,5 +1,6 @@
-// Pedestrians: locals strolling the pavements round their block, walking Ocean Drive's promenade,
-// chatting, fleeing gunfire and dangerous driving, cowering, and remembering a crime to report.
+// Pedestrians: locals strolling the pavements round their block, walking Ocean Drive's promenade and
+// the beach's waterline, chatting, fleeing gunfire and dangerous driving, cowering, and remembering a
+// crime to report.
 import { Actor } from './actors.js';
 import { LINES, CANAL, BOULEVARD_X, ISLAND } from './map.js';
 import { rand, randInt, pick, chance } from './rng.js';
@@ -17,6 +18,8 @@ function blockLoop(i, j) {
 
 const PROMENADE = [[BOULEVARD_X + 10.5, ISLAND.minZ + 20], [BOULEVARD_X + 10.5, CANAL.zMin - 4]];
 const PROMENADE_S = [[BOULEVARD_X + 10.5, CANAL.zMax + 4], [BOULEVARD_X + 10.5, ISLAND.maxZ - 10]];
+const SHORE = [[[394, ISLAND.minZ + 20], [394, CANAL.zMin - 10]], [[429, ISLAND.minZ + 20], [429, CANAL.zMin - 10]],
+  [[394, CANAL.zMax + 10], [394, ISLAND.maxZ - 10]], [[429, CANAL.zMax + 10], [429, ISLAND.maxZ - 10]]];
 
 export class PedestrianBrain {
   constructor(actor, path, loop = true) {
@@ -83,7 +86,7 @@ export class Pedestrians {
   constructor(game) {
     this.game = game;
     this.list = [];
-    this.target = 46;
+    this.target = 58;
     this.radius = 130;
   }
 
@@ -98,8 +101,9 @@ export class Pedestrians {
   /** A walker on a random pavement loop or the promenade, somewhere `minD`..`maxD` from (x,z). */
   spawnNear(x, z, minD, maxD) {
     for (let attempt = 0; attempt < 10; attempt++) {
-      if (chance(0.25)) {
-        const path = chance(0.5) ? PROMENADE : PROMENADE_S;
+      const r = rand();
+      if (r < 0.32) {
+        const path = r < 0.18 ? (chance(0.5) ? PROMENADE : PROMENADE_S) : pick(SHORE);
         const pz = path[0][1] + rand() * (path[1][1] - path[0][1]);
         const px = path[0][0] + (rand() - 0.5) * 3;
         const d = Math.hypot(px - x, pz - z);

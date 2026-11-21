@@ -9,6 +9,7 @@ import { makeStream } from './rng.js';
 import { facadeAtlas, facadeWall } from './facades.js';
 import { shadeSand, shadeWater } from './coastal-materials.js';
 import { buildWaterfront } from './waterfront.js';
+import { buildBeachLife } from './beach-life.js';
 import { ArchitecturalDetails } from './architectural-details.js';
 import {
   LINES, LINE_MIN, LINE_MAX, ROAD_HALF, ISLAND, BEACH, CANAL, BRIDGE, BOULEVARD_X, SEA_LEVEL, PLACES,
@@ -59,6 +60,7 @@ export class City {
     this.flushBuildings();
     this.architecture.mount(scene);
     buildWaterfront(this);
+    buildBeachLife(this);
     this.buildPalms();
     this.buildAssetPlazas();
   }
@@ -198,8 +200,12 @@ export class City {
       if (Math.abs(x - 40) < 70 && Math.abs(z + 150) < 100 || x > 315) this.architecture.storefront(x, z, w, d, variant);
       this.trimBucket.box(x, 4.75, z, w + 0.5, 0.3, d + 0.5, 2);
       facadeWall(b, x, z, w, d, 4.6, h, style);
+      this.architecture.relief(x, z, w, d, 4.6, h, style, tint);
     } else if (style === 'warehouse') b.boxSides(x, z, w, d, 0.1, h, 16, 14);
-    else facadeWall(b, x, z, w, d, 0.1, h, style);
+    else {
+      facadeWall(b, x, z, w, d, 0.1, h, style);
+      this.architecture.relief(x, z, w, d, 0.1, h, style, tint);
+    }
     this.roofBucket.flat(x - w / 2, z - d / 2, x + w / 2, z + d / 2, h, 6);
     if (!opts.noParapet) {
       const p = 0.35;
@@ -215,6 +221,7 @@ export class City {
         const az = z + (this.rnd() - 0.5) * d * 0.6;
         this.roofBucket.box(ax, h + 0.9, az, 2 + this.rnd() * 3, 1.8, 2 + this.rnd() * 3, 2);
       }
+      this.architecture.rooftop(x, z, w, d, h);
     }
     if (opts.collide !== false) this.addCollider(x - w / 2, z - d / 2, x + w / 2, z + d / 2, h);
   }
@@ -231,6 +238,7 @@ export class City {
       const th = (h - 9) / tiers;
       const b = this.facadeBucket(style, tint);
       facadeWall(b, x, z, tw, td, y, y + th, style);
+      this.architecture.relief(x, z, tw, td, y, y + th, style, tint);
       this.roofBucket.flat(x - tw / 2, z - td / 2, x + tw / 2, z + td / 2, y + th, 6);
       this.trimBucket.box(x, y + th + 0.4, z, tw + 0.6, 0.8, td + 0.6, 2);
       y += th;
@@ -298,6 +306,7 @@ export class City {
     let w = W * 0.55;
     for (const th of [70, 60, 40]) {
       facadeWall(this.facadeBucket('glass', 0xffd9f0), cx, cz, w, w, y, y + th, 'glass');
+      this.architecture.relief(cx, cz, w, w, y, y + th, 'glass', 0xffd9f0);
       this.trimBucket.box(cx, y + th + 0.5, cz, w + 1, 1, w + 1, 2);
       y += th;
       w *= 0.78;
@@ -360,6 +369,7 @@ export class City {
       const isFlamingo = Math.abs(lz - PLACES.safehouse.z) < 20;
       const sign = isFlamingo ? MOTEL_SIGNS[0] : s;
       this.addSign(x1 + 1.2, h - 1.5, lz + 7, Math.PI / 2, sign[0], sign[1], sign[2], 9, 4.5, sign[3]);
+      this.architecture.neonTrim(x1, lz, D / lots - 4, h, sign[1]);
       // a pool behind
       if (this.rnd() < 0.6) this.addPool(x0 + 8, lz);
     }
