@@ -365,7 +365,10 @@ export class City {
       // deco fins and a coloured band
       this.trimBucket.box(x1 + 0.3, h * 0.5, lz, 0.6, h * 0.9, 1.2, 2);
       this.trimBucket.box(x1 + 0.2, h + 1.2, lz, 0.8, 2.4, D / lots - 8, 2);
-      const s = MOTEL_SIGNS[(this.signs.length * 3 + Math.floor(this.rnd() * 8)) % MOTEL_SIGNS.length];
+      // Names step through the whole list before repeating; the draw stays so the layout stream holds.
+      this.rnd();
+      this.motels = (this.motels ?? 0) + 1;
+      const s = MOTEL_SIGNS[(this.motels * 5 + 2) % MOTEL_SIGNS.length];
       const isFlamingo = Math.abs(lz - PLACES.safehouse.z) < 20;
       const sign = isFlamingo ? MOTEL_SIGNS[0] : s;
       this.addSign(x1 + 1.2, h - 1.5, lz + 7, Math.PI / 2, sign[0], sign[1], sign[2], 9, 4.5, sign[3]);
@@ -420,7 +423,7 @@ export class City {
       }
       const mat = new THREE.MeshStandardMaterial({
         map: tex.map, bumpMap: tex.bump ?? null, bumpScale: 0.037, roughnessMap: tex.rough ?? null,
-        color: new THREE.Color(tint).lerp(new THREE.Color(0xffffff), 0.48), emissiveMap: tex.lit, emissive: 0xffffff, emissiveIntensity: 0.05,
+        color: new THREE.Color(tint).lerp(new THREE.Color(0xffffff), style === 'stucco' || style === 'motel' ? 0.22 : 0.48), emissiveMap: tex.lit, emissive: 0xffffff, emissiveIntensity: 0.05,
         roughness: glass ? 0.71 : 0.93, metalness: glass ? 0.38 : 0.06,
       });
       this.facadeMaterials.push(mat);

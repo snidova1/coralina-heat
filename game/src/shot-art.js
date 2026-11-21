@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { glowTexture } from './textures.js';
 import { ISLAND, SEA_LEVEL } from './map.js';
 
-export const TITLE_COAST = [459, 13.1, -350, 396, 7.8, -233];
+export const TITLE_COAST = [455, 18, -352, 386, 6.5, -240];
 
 export function goldenHour(game, direction) {
   const d = game.day;

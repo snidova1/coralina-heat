@@ -80,7 +80,7 @@ const SCENES = {
     aimChaseSearchlight(game.police.heli, 359.2, -112.5);
     game.police.heli.rotor.rotation.y = 0.66;
     game.hud.showVehicleName(hero.label);
-    camera(game, [350.6, 2.1, -126.4, 364.0, 2.8, -104.5], 51);
+    camera(game, [351.7, 2.0, -125.2, 364.0, 2.8, -104.5], 51);
   },
 
   street(game) {
@@ -105,7 +105,11 @@ const SCENES = {
       p.body.arms[1].shoulder.rotation.set(-1.25, 0, 0.15);
       p.body.arms[1].elbow.rotation.x = -0.46;
     }
-    if (p.body.model) p.body.model.rotation.x = 0.14;
+    if (p.body.model) {
+      // lean into the car, lifted so the leading toe meets the asphalt instead of sinking through it
+      p.body.model.rotation.x = 0.14;
+      p.body.model.position.y += 0.075;
+    }
     const veraLook = { ...randomLook(), skirt: true, authoredPalette: true, skin: 0xd9a07a, shirt: 0xd98270, pants: 0xd98270, print: false };
     const vera = new Actor(game, 'civilian', 46.0, -130.02, veraLook);
     vera.position.y = 0.02;
@@ -169,9 +173,12 @@ const SCENES = {
     stageCrowd(game, [
       [172, 383, Math.PI / 2 + 0.2, 'run'], [178, 389, Math.PI / 2 - 0.1, 'run'], [185, 385, Math.PI / 2, 'run'],
       [192, 381, Math.PI / 2 + 0.3, 'run'], [200, 388, Math.PI / 2], [168, 378.5, Math.PI + 0.4, 'run'],
-      [175, 376, Math.PI, 'run'], [190, 375, Math.PI - 0.3, 'run'], [166, 391.2, 0.4, 'cower'],
+      [175, 376, Math.PI, 'run'], [187, 374.5, Math.PI - 0.3, 'run'], [166, 391.2, 0.4, 'cower'],
       [162, 374, Math.PI + 0.3, 'run'], [170, 371, Math.PI, 'run'], [181, 379.5, Math.PI / 2, 'run'],
     ]);
+    // the first CBPD unit noses onto the marina walk
+    game.police.spawnCruiser(195, 377.6, -Math.PI / 2 + 0.3).syncMesh(0);
+    game.wanted.setLevel(1);
     targetBadge(game, enemies[0], 'SAINT OCHO');
     game.hud.subtitle(CAST.ocho.name, CAST.ocho.color, 'You came back for THIS? Coralina eats boys like you!', 4);
     game.missions.update(0);
@@ -191,6 +198,8 @@ const SCENES = {
       [403.2, -322.6, 0, 'idle'], [406.8, -323, 0.1, 'idle'], [403.5, -313.2, Math.PI, 'idle'], [407.2, -313.8, Math.PI + 0.2, 'idle'],
       [414, -327, 1.2, 'idle'], [415.2, -326.2, -2.0, 'idle'], [412, -336, 0.3], [395, -301, Math.PI / 2], [392, -286, 2.5, 'stroll'],
       [386, -271, 0], [370.5, -300, 0], [371, -292, Math.PI], [369.8, -280, 0, 'stroll'], [370.6, -268, Math.PI], [370.2, -255, 0],
+      [425, -330, 0.2, 'stroll'], [424.2, -329, 0.3, 'stroll'], [419, -323, 2.0, 'idle'], [420, -322.4, -1.4, 'idle'],
+      [427, -316, Math.PI], [416, -336, 1.0], [408, -330, -0.5, 'idle'], [433, -322, Math.PI, 'run'],
     ]);
     stageTraffic(game, [
       ['taxi', 363.4, -300, Math.PI], ['sedan', 356.6, -288, 0, 0xf7d7e0], ['pickup', 363.4, -262, Math.PI],
