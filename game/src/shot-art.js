@@ -3,6 +3,8 @@ import * as THREE from 'three';
 import { glowTexture } from './textures.js';
 import { ISLAND, SEA_LEVEL } from './map.js';
 
+export const TITLE_COAST = [459, 13.1, -350, 396, 7.8, -233];
+
 export function goldenHour(game, direction) {
   const d = game.day;
   d.setHour(19.25);
@@ -23,39 +25,7 @@ export function goldenHour(game, direction) {
   game.scene.fog.density = 0.00039;
   d.bakeEnvironment();
   game.scene.environmentIntensity = 0.44;
-  sunsetWater(game, d.uniforms);
-}
-
-function sunsetWater(game, sky) {
-  const water = game.city.waterMat;
-  water.color.set(0x145268);
-  water.roughness = 0.22;
-  water.onBeforeCompile = shader => {
-    shader.uniforms.sunsetDirection = sky.sunDir;
-    shader.uniforms.sunsetColor = sky.sunColor;
-    shader.uniforms.horizonTint = sky.horizonColor;
-    shader.vertexShader = 'varying vec3 vOceanPoint;\n' + shader.vertexShader.replace('#include <worldpos_vertex>', `
-      #include <worldpos_vertex>
-      vOceanPoint = (modelMatrix * vec4(transformed, 1.0)).xyz;
-    `);
-    shader.fragmentShader = `
-      varying vec3 vOceanPoint;
-      uniform vec3 sunsetDirection, sunsetColor, horizonTint;
-    ` + shader.fragmentShader.replace('#include <opaque_fragment>', `
-      vec3 eye = normalize(cameraPosition - vOceanPoint);
-      vec2 p = vOceanPoint.xz;
-      vec2 ripple = vec2(sin(p.x * 0.77 + p.y * 1.38), cos(p.x * 1.47 - p.y * 0.82));
-      ripple += 0.46 * vec2(cos(p.y * 3.28), sin(p.x * 2.45 + p.y * 1.65));
-      vec3 reflected = reflect(-eye, normalize(vec3(ripple.x * 0.043, 1.0, ripple.y * 0.043)));
-      float alongSun = max(dot(reflected, sunsetDirection), 0.0);
-      float glare = pow(alongSun, 110.0) * 0.26 + pow(alongSun, 1250.0) * 1.55;
-      float grazing = pow(1.0 - clamp(eye.y, 0.0, 1.0), 5.0);
-      outgoingLight = mix(outgoingLight, horizonTint * 0.36 + vec3(0.018, 0.037, 0.068), grazing * 0.82);
-      outgoingLight += sunsetColor * glare * grazing;
-      #include <opaque_fragment>
-    `);
-  };
-  water.needsUpdate = true;
+  game.city.waterClock.value = 1.35;
 }
 
 export function dressDrift(game, hero, cruisers) {
@@ -75,6 +45,12 @@ export function dressDrift(game, hero, cruisers) {
         p.age = p.life * (0.56 + t * 0.28);
       }
     }
+  }
+  game.effects.update(0.001);
+  for (let i = 0; i < 15; i++) {
+    const taper = i / 14;
+    const puff = game.effects.emit('tire', x + 1.0 + Math.sin(i * 4) * (.34 + taper * .7), .41 + taper * .42, z + 1.9 + i * .41, 0, 0, 0, .36 + taper * 1.32);
+    puff.age = puff.life * (.34 + taper * .21);
   }
   game.effects.update(0.001);
   const glowMap = glowTexture();
@@ -105,7 +81,7 @@ export function dressDrift(game, hero, cruisers) {
       spill.rotation.x = -Math.PI / 2;
       spill.position.set(side * 1.55, 0.073, 0.5);
       car.root.add(spill);
-      const light = new THREE.PointLight(color, 11, 5.5, 2);
+      const light = new THREE.PointLight(color, 8, 5.5, 2);
       light.position.copy(lamp.position);
       car.body.add(light);
     }
@@ -203,7 +179,7 @@ export function lightOceanDrive(game) {
   for (const { plane, glow } of game.city.signs) {
     const { x, y, z } = plane.position;
     if (x < 340 || z < -330 || z > -120) continue;
-    const light = new THREE.PointLight(glow.material.color, 165, 29, 2);
+    const light = new THREE.PointLight(glow.material.color, 102, 27, 2);
     light.position.set(x + 3.5, y - 2, z);
     game.scene.add(light);
   }

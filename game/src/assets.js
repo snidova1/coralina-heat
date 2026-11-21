@@ -137,6 +137,21 @@ export function createCharacter(look) {
     if (!o.isMesh) return;
     o.material = o.material.clone();
     o.material.color.offsetHSL((look.shirt % 101) / 101 * 0.3 - 0.15, -0.06, 0.025);
+    const clothHue = { value: look.resortBlue ? 1.0 : ((look.shirt >>> 12) % 7 - 3) * 0.13 };
+    const complexion = { value: new THREE.Color(look.skin).r };
+    o.material.onBeforeCompile = shader => {
+      shader.uniforms.clothHue = clothHue;
+      shader.uniforms.complexion = complexion;
+      shader.fragmentShader = 'uniform float clothHue, complexion;\n' + shader.fragmentShader.replace('#include <map_fragment>', `
+        #include <map_fragment>
+        vec3 col = diffuseColor.rgb;
+        float cloth = smoothstep(.145,.34,col.r-max(col.g,col.b))*(1.0-smoothstep(.43,.63,col.g/max(col.r,.01)));
+        vec3 petrol = col.gbr * vec3(.78,1.28,1.09);
+        diffuseColor.rgb = mix(col, mix(col,petrol,clamp(.22+clothHue,0.0,1.0)),cloth);
+        float skin = smoothstep(.21,.38,col.r)*smoothstep(.45,.62,col.g/max(col.r,.01))*(1.0-smoothstep(.87,.97,col.b/max(col.g,.01)));
+        diffuseColor.rgb *= 1.0 + skin * (complexion-.55)*.29;
+      `);
+    };
     ownedMaterials.push(o.material);
   });
   const mixer = new THREE.AnimationMixer(model);

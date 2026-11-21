@@ -35,8 +35,13 @@ export function shadeSand(material) {
       float ripple = sin(p.x*12.0 + 1.4*sin(p.y*1.4) + drift*5.8);
       ripple *= 1.0-smoothstep(.05,.85,length(fwidth(p)));
       float wet = smoothstep(coastLine - 7.0, coastLine - .5, p.x + (drift-.5)*4.0);
-      diffuseColor.rgb *= mix(vec3(.81,.66,.51), vec3(.36,.25,.21), wet);
-      diffuseColor.rgb *= .85 + .28*drift + .10*ripple;
+      vec2 trail = vec2(mod(p.x - 384.0, 18.0), p.y + .8*sin(p.x*.083));
+      float stride = floor(trail.x / .58);
+      vec2 stepPos = vec2(mod(trail.x,.58)-.29, mod(trail.y + mod(stride,2.0)*.17, 13.0)-6.5);
+      float printMark = (1.0-smoothstep(.70,1.13,length(stepPos*vec2(7.6,16.0))))*step(.31,coastHash(vec2(stride,floor(p.y/13.0))));
+      printMark *= smoothstep(373.0,382.0,p.x)*(1.0-smoothstep(.047,.21,length(fwidth(p))));
+      diffuseColor.rgb *= mix(vec3(.92,.75,.52), vec3(.36,.25,.21), wet);
+      diffuseColor.rgb *= .85 + .26*drift + .079*ripple - .22*printMark;
     `);
   };
 }
